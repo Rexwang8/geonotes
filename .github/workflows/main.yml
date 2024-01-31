@@ -1,6 +1,6 @@
 name: Build project
 
-on: [pull_request]
+on: [push]
 
 jobs:
   buildForAllSupportedPlatforms:
@@ -11,7 +11,6 @@ jobs:
       matrix:
         targetPlatform:
           - StandaloneWindows # Build a Windows standalone.
-          - StandaloneWindows64 # Build a Windows 64-bit standalone.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,6 +29,7 @@ jobs:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
+          customImage: 'unityci/editor:2022.3.17f1'
           targetPlatform: ${{ matrix.targetPlatform }}
           versioning: Semantic
       - uses: actions/upload-artifact@v3
