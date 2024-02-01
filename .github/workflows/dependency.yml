@@ -4,7 +4,9 @@ on:
 jobs:
   trackDependencies:
     name: Track Dependencies
+    
     runs-on: ubuntu-latest
+
     steps:
       - uses: anchore/sbom-action@v0
       with:
