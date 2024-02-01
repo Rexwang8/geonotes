@@ -6,23 +6,6 @@ jobs:
     name: Track Dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: anchore/sbom-action@v0
         with:
-          fetch-depth: 0
-          lfs: true
-      - uses: actions/cache@v3
-        with:
-          path: Library
-          key: Library
-          restore-keys: Library-
-      - name: Track Dependencies
-        uses: game-ci/track-dependencies@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          package-manager: 'upm'
-          output-file: 'dependencies.json'
-      - name: Upload Dependencies
-        uses: actions/upload-artifact@v3
-        with:
-          name: dependencies
-          path: dependencies.json
+          image: ghcr.io/example/image_name:tag
