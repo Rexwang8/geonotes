@@ -10,19 +10,21 @@ public class PostCard : ScriptableObject
     
     //store media
 
+    // Constructor
     public PostCard(string _title, System.DateTime _date) 
     {
         title = _title;
         date = _date;
     }
     
-    //Edit Variables
-    public void updateTitle(string _title)
+    // Edit Variables
+    public void UpdateTitle(string _title)
     {
         title = _title;
     }
 
-    public void displayContent()
+    // Print title and date
+    public void DisplayContent()
     {
         Debug.Log("Title: " + title);
         Debug.Log("Date: " + date);
