@@ -15,9 +15,7 @@ public class Testing : MonoBehaviour
         map.name = "Test Map";
         //pull demomap from streamable assets
         string mapImagePath = Application.streamingAssetsPath + "/demomap.png";
-        map.image = new Texture2D(50, 50);
         map.notes = new List<PostCard>();
-        map.thumbnail = new Texture2D(50, 50);
 
         // Create a new note
         PostCard note = new PostCard("Test Note", System.DateTime.Now);
