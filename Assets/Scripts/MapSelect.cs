@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.IO;
+using System.Linq;
+
 
 
 public class MapSelect : MonoBehaviour
@@ -15,11 +18,21 @@ public class MapSelect : MonoBehaviour
     void Start()
     {
         // Create a new list of items
+        
+        string mapsDirectory = Application.streamingAssetsPath + "/Maps/";
+
+        // Get only directories, not files
+        string[] directories = Directory.GetDirectories(mapsDirectory);
+
         List<string> items = new List<string>();
-        for (int i = 0; i < numItems; i++)
+
+        foreach (string directoryPath in directories)
         {
-            items.Add("Item " + i);
+            // Extract the folder name from the path
+            string folderName = Path.GetFileName(directoryPath);
+            items.Add(folderName);
         }
+    
 
         // Create gameobjects as buttons that are children of the scroll view
         GameObject scrollViewContent = this.gameObject.transform.Find("Viewport").Find("Content").gameObject;
