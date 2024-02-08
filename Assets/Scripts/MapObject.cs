@@ -177,4 +177,10 @@ public class MapObject
 
     }
 
+    // Return count of notes
+    public int GetNoteCount()
+    {
+        return notes.Count;
+    }
+
 }

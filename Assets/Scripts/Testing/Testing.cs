@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 using NaughtyAttributes;
 
 // Class for testing
@@ -29,6 +30,10 @@ public class Testing : MonoBehaviour
 
         //show map info
         map.DisplayMapInfo();
+
+        Assert.AreEqual(map.name, "Test Map");
+        Assert.AreEqual(map.notes.Count, 1);
+        Debug.Log("Test Passed");
     }
 
 
