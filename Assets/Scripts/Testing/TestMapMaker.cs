@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using NaughtyAttributes;
-
+using SpatialNotes;
 
 public class TestMapMaker : MonoBehaviour
 {

@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
+namespace SpatialNotes {
 // This class represents a Map, which contains both a 2D image and notes (for now)
 public class MapObject
 {
@@ -184,3 +186,6 @@ public class MapObject
     }
 
 }
+}
+
+
