@@ -46,7 +46,6 @@ public class PostCard
     // Print title and date
     public void DisplayContent()
     {
-        Debug.Log("Title: " + title);
-        Debug.Log("Date: " + date);
+        Debug.Log("Title: " + title + "Date: " + date);
     }
 }
