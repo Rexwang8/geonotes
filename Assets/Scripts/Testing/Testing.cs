@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
 using NaughtyAttributes;
+using SpatialNotes;
 
 // Class for testing
 public class Testing : MonoBehaviour

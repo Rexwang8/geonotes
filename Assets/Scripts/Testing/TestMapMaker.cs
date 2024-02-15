@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using NaughtyAttributes;
-
+using SpatialNotes;
 
 public class TestMapMaker : MonoBehaviour
 {
@@ -11,33 +11,60 @@ public class TestMapMaker : MonoBehaviour
     public void MakeMapTest()
     {
         // Create a new map object
+        // MapObject map = new MapObject();
+        // map.name = "Test Map";
+        // string mapImagePath = Application.streamingAssetsPath + "/demomap.jpg";
+        // map.UpdateImage(mapImagePath);
+        // map.UpdateThumbnail(mapImagePath);
+        // map.notes = new List<PostCard>();
+
+        // // Create a new note
+        // PostCard note = new PostCard("Test Note MapMaker", System.DateTime.Now);
+        // map.notes.Add(note);
+        // PostCard note2 = new PostCard("Test Note 2 MapMaker", System.DateTime.Now);
+        // map.notes.Add(note2);
+        // map.DisplayMapInfo();
+
+        // // Save the map
+        // map.SaveMap();
+
+        // Debug.Log("Map Created");
+
+        // MapObject loadedMap = new MapObject();
+        // loadedMap.LoadMap("testmap");
+        // loadedMap.DisplayMapInfo();
+        // for (int i = 0; i < loadedMap.notes.Count; i++)
+        // {
+        //     loadedMap.notes[i].DisplayContent();
+        //     Debug.Log("Datetime: " + loadedMap.notes[i].date + " " + loadedMap.notes[i].dateString + " " + loadedMap.notes[i].timeString);
+        // }
+    
         MapObject map = new MapObject();
-        map.name = "Test Map";
         string mapImagePath = Application.streamingAssetsPath + "/demomap.jpg";
-        map.UpdateImage(mapImagePath);
-        map.UpdateThumbnail(mapImagePath);
-        map.notes = new List<PostCard>();
+        map.CreateMap("Testing", mapImagePath);
 
-        // Create a new note
-        PostCard note = new PostCard("Test Note MapMaker", System.DateTime.Now);
-        map.notes.Add(note);
-        PostCard note2 = new PostCard("Test Note 2 MapMaker", System.DateTime.Now);
-        map.notes.Add(note2);
-        map.DisplayMapInfo();
+        //Postcard testing portion
+        PostCard note = new PostCard("Test Note MapMaker1", System.DateTime.Now);
+        map.AddPostcard(note);
+        note = new PostCard("Test Note MapMaker2", System.DateTime.Now);
+        map.AddPostcard(note);  
+        map.DisplayPostCardInfo();
 
-        // Save the map
-        map.SaveMap();
+        map.SaveNoteJson();
+    }
 
-        Debug.Log("Map Created");
+    [Button("AddNoteToMap")]
+    public void AddNoteTest()
+    {
+        MapObject map = new MapObject();
+        
+        map.LoadMap("Testing");
+        // MapObject map = new MapObject();
 
-        MapObject loadedMap = new MapObject();
-        loadedMap.LoadMap("testmap");
-        loadedMap.DisplayMapInfo();
-        for (int i = 0; i < loadedMap.notes.Count; i++)
-        {
-            loadedMap.notes[i].DisplayContent();
-            Debug.Log("Datetime: " + loadedMap.notes[i].date + " " + loadedMap.notes[i].dateString + " " + loadedMap.notes[i].timeString);
-        }
+        // PostCard note = new PostCard("Test Note MapMaker", System.DateTime.Now);
+        // map.AddPostcard(note);
+
+        // map.SaveNoteJson();
     }
 
     // Clear All Maps
