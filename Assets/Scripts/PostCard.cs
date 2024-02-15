@@ -2,50 +2,53 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
-public class PostCard
+namespace SpatialNotes
 {
-    public string title;
-    public System.DateTime date;
-    public string dateString = "";
-    public string timeString = "";
-    //store coordinate
-    
-    //store media
-
-    // Constructor
-    public PostCard(string _title, System.DateTime _date)
+    [System.Serializable]
+    public class PostCard
     {
-        title = _title;
-        date = _date;
+        public string title;
+        public System.DateTime date;
+        public string dateString = "";
+        public string timeString = "";
+        //store coordinate
 
-        // Save date as string
-        if (dateString == "" || timeString == "")
+        //store media
+
+        // Constructor
+        public PostCard(string _title, System.DateTime _date)
         {
-            SaveDateTime();
+            title = _title;
+            date = _date;
+
+            // Save date as string
+            if (dateString == "" || timeString == "")
+            {
+                SaveDateTime();
+            }
         }
-    }
 
-    // Load Date from string
-    public void LoadDateTime()
-    {
-        date = System.DateTime.Parse(dateString + " " + timeString);
-    }
-    public void SaveDateTime()
-    {
-        dateString = date.ToString("yyyy-MM-dd");
-        timeString = date.ToString("HH:mm:ss");
-    }
-    
-    // Edit Variables
-    public void UpdateTitle(string _title)
-    {
-        title = _title;
-    }
+        // Load Date from string
+        public void LoadDateTime()
+        {
+            date = System.DateTime.Parse(dateString + " " + timeString);
+        }
+        public void SaveDateTime()
+        {
+            dateString = date.ToString("yyyy-MM-dd");
+            timeString = date.ToString("HH:mm:ss");
+        }
 
-    // Print title and date
-    public void DisplayContent()
-    {
-        Debug.Log("Title: " + title + "Date: " + date);
+        // Edit Variables
+        public void UpdateTitle(string _title)
+        {
+            title = _title;
+        }
+
+        // Print title and date
+        public void DisplayContent()
+        {
+            Debug.Log("Title: " + title + "Date: " + date);
+        }
     }
 }

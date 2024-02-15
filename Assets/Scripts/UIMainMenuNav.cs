@@ -2,72 +2,75 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UIMainMenuNav : MonoBehaviour
+namespace SpatialNotes
 {
-    // Map Select panel
-    public GameObject mapSelect;
-
-    // Options panel
-    public GameObject options;
-
-
-    // Button click events for main menu
-
-    // Play button
-    public void OnClickPlay()
+    public class UIMainMenuNav : MonoBehaviour
     {
-        setObjectDisabled(options);
-        setObjectEnabled(mapSelect);
-    }
+        // Map Select panel
+        public GameObject mapSelect;
 
-    // Options button
-    public void OnClickOptions()
-    {
-        setObjectDisabled(mapSelect);
-        setObjectEnabled(options);
-    }
-
-    // Back button (map select and options)
-    public void OnClickBack()
-    {
-        setObjectDisabled(mapSelect);
-        setObjectDisabled(options);
-    }
-
-    // Quit button
-    public void OnClickQuit()
-    {
-        Application.Quit();
-    }
+        // Options panel
+        public GameObject options;
 
 
-    // Helpers
+        // Button click events for main menu
 
-    // Toggle object
-    private void toggleObject(GameObject obj)
-    {
-        if (obj)
+        // Play button
+        public void OnClickPlay()
         {
-            obj.SetActive(!obj.activeSelf);
+            setObjectDisabled(options);
+            setObjectEnabled(mapSelect);
         }
-    }
 
-    // Set object to disabled
-    private void setObjectDisabled(GameObject obj)
-    {
-        if (obj)
+        // Options button
+        public void OnClickOptions()
         {
-            obj.SetActive(false);
+            setObjectDisabled(mapSelect);
+            setObjectEnabled(options);
         }
-    }
 
-
-    // Set object to enabled
-    private void setObjectEnabled(GameObject obj)
-    {
-        if (obj)
+        // Back button (map select and options)
+        public void OnClickBack()
         {
-            obj.SetActive(true);
+            setObjectDisabled(mapSelect);
+            setObjectDisabled(options);
+        }
+
+        // Quit button
+        public void OnClickQuit()
+        {
+            Application.Quit();
+        }
+
+
+        // Helpers
+
+        // Toggle object
+        private void toggleObject(GameObject obj)
+        {
+            if (obj)
+            {
+                obj.SetActive(!obj.activeSelf);
+            }
+        }
+
+        // Set object to disabled
+        private void setObjectDisabled(GameObject obj)
+        {
+            if (obj)
+            {
+                obj.SetActive(false);
+            }
+        }
+
+
+        // Set object to enabled
+        private void setObjectEnabled(GameObject obj)
+        {
+            if (obj)
+            {
+                obj.SetActive(true);
+            }
         }
     }
 }

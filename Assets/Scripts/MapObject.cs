@@ -55,6 +55,12 @@ public class MapObject
     {
         Debug.Log("Displaying image: " + name);
     }
+
+    // Print name of thumbnail
+    public void DisplayThumbnail()
+    {
+        Debug.Log("Displaying thumbnail: " + name);
+    }
     
     // Print name of Map and number of notes
     public void DisplayMapInfo()
@@ -138,8 +144,27 @@ public class MapObject
         tbnSize = new Vector2Int(thumbnail.width, thumbnail.height);
     }
 
-    public void CreateMap(string _name, string _TEMP_IMAGE_PATH)
+    public void CreateMap(string _TEMP_IMAGE_PATH, string _name="defaultName")
     {   
+        if (_TEMP_IMAGE_PATH == null)
+        {
+            Debug.LogWarning("Please enter an image for the map");
+            return;
+        }
+
+        if (_name == "defaultName")
+        {
+            if (name != null)
+            {
+                _name = name;
+            }
+            else
+            {
+                Debug.LogWarning("Please enter a name for the map");
+                return;
+            }
+        }
+
         // Create maps folder if it doesn't exist
         string folderPath = Application.streamingAssetsPath + "/Maps";
         if (!System.IO.Directory.Exists(folderPath))
@@ -299,7 +324,7 @@ public class MapObject
             notes.Add(note);
         }
 
-        DisplayPostCardInfo();
+        // DisplayPostCardInfo();
     }   
 
     // Return count of notes
