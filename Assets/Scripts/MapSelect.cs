@@ -12,18 +12,26 @@ using SimpleFileBrowser;
 
 public class MapSelect : MonoBehaviour
 {
-    // DEBUG - number of items
-    public int numItems = 10;
     public GameObject buttonPrefab;
 
     // Default path to open file explorer
     private string _defaultPath;
+    private string[] _foundPaths;
+    private bool _explorerActive = false;
 
     //pick mode enum { Files = 0, Folders = 1, FilesAndFolders = 2 };
 
-    // Start is called before the first frame update
-    void Start()
+
+    // Refresh map panel
+    public void RefreshMapSelectPanel()
     {
+        // Clear the current list of items
+        GameObject scrollViewContent = this.gameObject.transform.Find("Viewport").Find("Content").gameObject;
+        foreach (Transform child in scrollViewContent.transform)
+        {
+            GameObject.Destroy(child.gameObject);
+        }
+
         // Create a new list of items
 
         string mapsDirectory = Application.streamingAssetsPath + "/Maps/";
@@ -40,9 +48,7 @@ public class MapSelect : MonoBehaviour
             items.Add(folderName);
         }
 
-
         // Create gameobjects as buttons that are children of the scroll view
-        GameObject scrollViewContent = this.gameObject.transform.Find("Viewport").Find("Content").gameObject;
         for (int i = 0; i < items.Count; i++)
         {
             //generic tmp button
@@ -69,7 +75,15 @@ public class MapSelect : MonoBehaviour
 
         // Set file browser default path
         _defaultPath = Application.streamingAssetsPath + "/Maps";
+    }
 
+
+    
+    // Start is called before the first frame update
+    void Start()
+    {
+        // Refresh the map select panel
+        RefreshMapSelectPanel();
     }
 
     // Generic button function
@@ -83,24 +97,37 @@ public class MapSelect : MonoBehaviour
     // upload new map function
     public void OnClickUpload()
     {
-        _openFileExplorer();
+        
         //OnFileSelected(returnedPaths);
     }
 
-    // Helper to open file explorer
-    private void _openFileExplorer()
+    // Load existing folder
+    public void OnClickLoad()
     {
+        //select folder
+        _openFileExplorerToLoadFolder();
+    }
+
+    // Helper to open file explorer
+    private void _openFileExplorerToLoadFolder()
+    {
+        if (_explorerActive)
+        {
+            Debug.Log("Explorer already active");
+            return;
+        }
         //open in maps directory, if it exists, else create it
         string path = Application.streamingAssetsPath + "/Maps";
         if (!System.IO.Directory.Exists(path))
         {
             System.IO.Directory.CreateDirectory(path);
         }        
+
         _setFileBrowserFilterFolderOnly();
 
-        // Show a save file dialog
+        // Show a save file dialog, await response from dialog
         StartCoroutine(ShowLoadDialogCoroutineFoldersOnly());
-
+        
         return;
     }
 
@@ -123,17 +150,19 @@ public class MapSelect : MonoBehaviour
     // Coroutine to show the load file dialog
     IEnumerator ShowLoadDialogCoroutineFoldersOnly()
     {
+        _explorerActive = true;
         // Directories only
         yield return FileBrowser.WaitForLoadDialog(SimpleFileBrowser.FileBrowser.PickMode.Folders, true, _defaultPath, null, "Select Map Folder", "Load");
         Debug.Log(FileBrowser.Success + " " + FileBrowser.Result);
         if (FileBrowser.Success)
         {
-            OnFileSelected(FileBrowser.Result);
+            OnFolderSelected(FileBrowser.Result);
         }
+        _explorerActive = false;
     }
 
     // Logs the paths of the selected files
-    void OnFileSelected(string[] paths)
+    void OnFolderSelected(string[] paths)
     {
         if (paths.Length == 0)
         {
@@ -144,5 +173,27 @@ public class MapSelect : MonoBehaviour
         {
             Debug.Log("Selected file: " + path);
         }
+
+        // select only one 
+        string selectedPath = paths[0];
+        Debug.Log("Selected path: " + selectedPath);
+
+        //Check if already exists in streaming assets
+        string mapName = Path.GetFileName(selectedPath);
+        string mapPath = Application.streamingAssetsPath + "/Maps/" + mapName;
+        if (System.IO.Directory.Exists(mapPath))
+        {
+            Debug.Log("Map already exists in streaming assets");
+            return;
+        }
+
+        // Copy the folder to the streaming assets
+        Debug.Log("Copying folder to streaming assets");
+        string destinationPath = Application.streamingAssetsPath + "/Maps/" + mapName;
+        FileUtil.CopyFileOrDirectory(selectedPath, destinationPath);
+
+        // Refresh the map select panel
+        RefreshMapSelectPanel();
+
     }
 }
