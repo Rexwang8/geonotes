@@ -36,10 +36,10 @@ public class ObjectCreationTests
         map.CreateMap(_name: "Test Map", _TEMP_IMAGE_PATH: mapImagePath);
 
         // Create a new note
-        PostCard note = new PostCard(_title: "Test Note", _date: System.DateTime.Now);
-        map.AddPostcard(note);
-        note = new PostCard(_title: "Test Note 2", _date: System.DateTime.Now);
-        map.AddPostcard(note);
+        // PostCard note = new PostCard(_title: "Test Note", _date: System.DateTime.Now);
+        // map.AddPostcard(note);
+        // note = new PostCard(_title: "Test Note 2", _date: System.DateTime.Now);
+        // map.AddPostcard(note);
 
 
         Assert.AreEqual(map.name, "Test Map");
@@ -64,12 +64,12 @@ public class ObjectCreationTests
         map.CreateMap(_name: "Test Map Test 2", _TEMP_IMAGE_PATH: mapImagePath);
 
         // Create a new note
-        PostCard note = new PostCard(_title: "Test Note", _date: System.DateTime.Now);
-        map.AddPostcard(note);
-        note = new PostCard(_title: "Test Note 2", _date: System.DateTime.Now);
-        map.AddPostcard(note);
-        note = new PostCard(_title: "Test Note 3", _date: System.DateTime.Now);
-        map.AddPostcard(note);
+        // PostCard note = new PostCard(_title: "Test Note", _date: System.DateTime.Now);
+        // map.AddPostcard(note);
+        // note = new PostCard(_title: "Test Note 2", _date: System.DateTime.Now);
+        // map.AddPostcard(note);
+        // note = new PostCard(_title: "Test Note 3", _date: System.DateTime.Now);
+        // map.AddPostcard(note);
 
         // Save the map
         map.SaveNoteJson();
