@@ -4,23 +4,23 @@ using UnityEngine;
 using TMPro;
 using SpatialNotes;
 
-namespace SpatialNotes {
+namespace SpatialNotes
+{
     // This class represents a Map, which contains both a 2D image and notes (for now)
     public class MapObject
     {
         public string name; // Name of the map
-        
+
         //Images
         public Texture2D image; // Image of the map
         public Texture2D thumbnail; // Thumbnail of the map
         public string imagePath; // Path of the image
         public string thumbnailPath; // Path of the thumbnail
-        
-        
-        public List<PostCard> notes; // List of notes on the map
-        Dictionary<string, List<PostCard>> notesDict; // Dictionary of notes on the map
-        Dictionary<string, LocationInfo> locationDict; // Dictionary of locations on the map
-        
+
+
+        SerializableDictionary<string, JsonableListWrapper<PostCard>> notesDict; // Dictionary of notes on the map
+        SerializableDictionary<string, LocationInfo> locationDict; // Dictionary of locations on the map
+
 
         public Vector2Int imgSize; // Size of the image
         public Vector2Int tbnSize; // Size of the thumbnail
@@ -75,7 +75,7 @@ namespace SpatialNotes {
         {
             Debug.Log("Displaying thumbnail: " + name);
         }
-        
+
         // Print name of Map and number of notes
         public void DisplayMapInfo()
         {
@@ -95,8 +95,8 @@ namespace SpatialNotes {
         {
             Debug.Log("----Displaying All locations");
             foreach (KeyValuePair<string, LocationInfo> location in locationDict)
-            {   
-                
+            {
+
                 Debug.Log("Location: " + location.Key + " " + location.Value.locationName + " " + location.Value.description);
             }
             Debug.Log("----Finished");
@@ -118,7 +118,7 @@ namespace SpatialNotes {
                 Debug.LogError("File does not exist: " + path);
                 return;
             }
-            
+
             byte[] imgBytes = System.IO.File.ReadAllBytes(path);
             image = new Texture2D(imgSize.x, imgSize.y);
             image.LoadImage(imgBytes);
@@ -160,7 +160,7 @@ namespace SpatialNotes {
                 thumbnail = new Texture2D(256, 256);
                 thumbnail.LoadImage(tbnBytes);
                 thumbnail.Apply();
-            } 
+            }
             else
             {
                 thumbnail.LoadImage(tbnBytes);
@@ -169,7 +169,7 @@ namespace SpatialNotes {
         }
 
         public void CreateMap(string _TEMP_IMAGE_PATH, string _name)
-        {   
+        {
             if (_TEMP_IMAGE_PATH == null)
             {
                 Debug.LogWarning("Please enter an image for the map");
@@ -243,8 +243,49 @@ namespace SpatialNotes {
             System.IO.File.WriteAllText(Application.streamingAssetsPath + mapJsonPath, json);
 
             //Instantiate notes dics
-            notesDict = new Dictionary<string, List<PostCard>>();
-            locationDict = new Dictionary<string, LocationInfo>();
+            notesDict = new SerializableDictionary<string, JsonableListWrapper<PostCard>>();
+            locationDict = new SerializableDictionary<string, LocationInfo>();
+
+        }
+
+        //Get number of notes
+        public int GetNumberOfNotes()
+        {
+            int count = 0;
+            foreach (KeyValuePair<string, JsonableListWrapper<PostCard>> note in notesDict)
+            {
+                count += note.Value.Count;
+            }
+            return count;
+        }
+
+        //Get number of locations
+        public int GetNumberOfLocations()
+        {
+            int count = locationDict.Count;
+            return count;
+        }
+
+        // Delete self
+        public void DeleteMap()
+        {
+            // League moment
+            string path = Application.streamingAssetsPath + mapDirPath;
+            // error if mapDirPath is null or empty
+            if (string.IsNullOrEmpty(mapDirPath))
+            {
+                Debug.LogError("Map directory path is null or empty");
+                return;
+            }
+            if (System.IO.Directory.Exists(path))
+            {
+                System.IO.Directory.Delete(path, true);
+                Debug.Log("Map deleted: " + path);
+            }
+            else
+            {
+                Debug.LogError("Map directory does not exist");
+            }
         }
 
         //Add postcard to the List
@@ -257,11 +298,24 @@ namespace SpatialNotes {
             }
             else
             {
-                LocationInfo newLocation = new LocationInfo(locName, locDescription);
-                locationDict.Add(locCoord, newLocation);   
+                LocationInfo newLocation = new LocationInfo(locName, locDescription, new Vector3(0, 0, 0));
+                locationDict.Add(locCoord, newLocation);
             }
         }
-        
+        // Add location to the map (vec3 overload)
+        public void AddLocation(Vector3 locCoord, string locName, string locDescription)
+        {
+            string locCoordStr = locCoord.x + "," + locCoord.y + "," + locCoord.z;
+            AddLocation(locCoordStr, locName, locDescription);
+        }
+
+        // Add location to map (locationinfo overload)
+        public void AddLocation(LocationInfo location)
+        {
+            string locCoordStr = location.coordinate.x + "," + location.coordinate.y + "," + location.coordinate.z;
+            AddLocation(locCoordStr, location.locationName, location.description);
+        }
+
         public void AddPostcard(string locCoord, PostCard postcard)
         {
             if (locationDict.ContainsKey(locCoord))
@@ -272,7 +326,8 @@ namespace SpatialNotes {
                 }
                 else
                 {
-                    notesDict.Add(locCoord, new List<PostCard> {postcard});
+                    List<PostCard> postcardList = new List<PostCard> { postcard };
+                    notesDict.Add(locCoord, new JsonableListWrapper<PostCard>(postcardList));
                 }
             }
             else
@@ -281,69 +336,67 @@ namespace SpatialNotes {
             }
         }
 
-        // Save the postcard list to a file (JSON); 
-        public void SaveNoteJson()
+        // Add postcard to the map (locationinfo overload)
+        public void AddPostcard(LocationInfo location, PostCard postcard)
         {
-            List<string> jsonLines = new List<string>();
-
-            foreach (KeyValuePair<string, List<PostCard>> note in notesDict)
-            {
-                string json = "\"" + note.Key + "\":" + ConvertNotesList2Json(note.Value);
-                jsonLines.Add(json);
-            }
-
-            string jsonArray = "{" + string.Join(",", jsonLines.ToArray()) + "}";
-
-            // Write the JSON array to the file
-            System.IO.File.WriteAllText(Application.streamingAssetsPath + notesJsonPath, jsonArray);
+            string locCoordStr = location.coordinate.x + "," + location.coordinate.y + "," + location.coordinate.z;
+            AddPostcard(locCoordStr, postcard);
         }
 
-        //helper function for savenotesjson()
-        public string ConvertNotesList2Json(List<PostCard> notes)
+        // helper to convert location coord string to vector3
+        private Vector3 _convertCoordStr2Vec3(string coordStr)
         {
-            List<string> jsonLines = new List<string>();
-            foreach (PostCard postcard in notes)
-            {
-                string json = JsonUtility.ToJson(postcard);
-                jsonLines.Add(json);
-            }
-            string jsonArray = "[" + string.Join(",", jsonLines.ToArray()) + "]";
-            return jsonArray;
+            string[] coordStrArr = coordStr.Split(',');
+            float x = float.Parse(coordStrArr[0]);
+            float y = float.Parse(coordStrArr[1]);
+            float z = float.Parse(coordStrArr[2]);
+            return new Vector3(x, y, z);
+        }
+
+        // Save the postcard list to a file (JSON); 
+        private void _saveNoteJson()
+        {
+            string json = JsonUtility.ToJson(notesDict);
+            System.IO.File.WriteAllText(Application.streamingAssetsPath + notesJsonPath, json);
         }
 
         // Save location list to a file (JSON)
-        public void SaveLocationJson()
-        {        
-            List<string> jsonLines = new List<string>();
-
-            foreach (KeyValuePair<string, LocationInfo> location in locationDict)
-            {
-                string json = JsonUtility.ToJson(location.Value);
-                json = "\"" + location.Key + "\":" + json;
-                jsonLines.Add(json);
-            }
-
-            string jsonArray = "{" + string.Join(",", jsonLines.ToArray()) + "}";
-
-            // Write the JSON array to the file
-            System.IO.File.WriteAllText(Application.streamingAssetsPath + locationJsonPath, jsonArray);
+        private void _saveLocationJson()
+        {
+            string json = JsonUtility.ToJson(locationDict);
+            System.IO.File.WriteAllText(Application.streamingAssetsPath + locationJsonPath, json);
         }
-        
+
+        // Save All
+        public void SaveAll()
+        {
+            _saveNoteJson();
+            _saveLocationJson();
+            string json = SerializeToJson();
+            System.IO.File.WriteAllText(Application.streamingAssetsPath + mapJsonPath, json);
+        }
+
+        public void LoadAll(string nameOfMapLowerCaseStripped)
+        {
+            _loadMap(nameOfMapLowerCaseStripped);
+        }
+
+
         // Load the map from a file (JSON)
-        public void LoadMap(string folderName)
+        private void _loadMap(string folderName)
         {
             string nameOfMapLowerCaseStripped = folderName.ToLower().Replace(" ", "");
             string path = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped + "/" + nameOfMapLowerCaseStripped + ".json";
             Debug.Log("1" + path);
             string json = System.IO.File.ReadAllText(path);
-            JsonUtility.FromJsonOverwrite(json, this); 
-            
+            JsonUtility.FromJsonOverwrite(json, this);
+
             //THIS IS FOR TESTING ONLY
             //changes the absolute path in the json file to relative path to absolute path to your local machine
             notesJsonPath = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped + "/notes/postcard.json";
             mapJsonPath = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped + "/" + nameOfMapLowerCaseStripped + ".json";
             mapDirPath = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped;
-            
+
             Debug.Log("2");
             // Load image and thumbnail
             string imgPath = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped + "/img.png";
@@ -351,43 +404,83 @@ namespace SpatialNotes {
             image = new Texture2D(imgSize.x, imgSize.y);
             image.LoadImage(imgBytes);
             Debug.Log("3");
-            
+            Debug.Log("imgSize: " + imgSize);
+
             string tbnPath = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped + "/tbn.png";
             byte[] tbnBytes = System.IO.File.ReadAllBytes(tbnPath);
             thumbnail = new Texture2D(tbnSize.x, tbnSize.y);
             thumbnail.LoadImage(tbnBytes);
             Debug.Log("4");
-            
-            //Read notes dictionary from json
-            json = System.IO.File.ReadAllText(notesJsonPath);
-            json = json.TrimStart('{').TrimEnd('}');
-            string[] jsonLines = json.Split("},{");
-            foreach (string part in jsonLines)
+            Debug.Log("tbnSize: " + tbnSize);
+
+            //get json path to notes and location
+            notesJsonPath = "/Maps/" + nameOfMapLowerCaseStripped + "/notes/postcard.json";
+            locationJsonPath = "/Maps/" + nameOfMapLowerCaseStripped + "/notes/location.json";
+            mapJsonPath = "/Maps/" + nameOfMapLowerCaseStripped + "/" + nameOfMapLowerCaseStripped + ".json";
+            mapDirPath = "/Maps/" + nameOfMapLowerCaseStripped;
+            Debug.Log("5");
+
+            // Load notes and locations from JSON
+            json = System.IO.File.ReadAllText(Application.streamingAssetsPath + notesJsonPath);
+            notesDict = JsonUtility.FromJson<SerializableDictionary<string, JsonableListWrapper<PostCard>>>(json);
+            json = System.IO.File.ReadAllText(Application.streamingAssetsPath + locationJsonPath);
+            locationDict = JsonUtility.FromJson<SerializableDictionary<string, LocationInfo>>(json);
+            Debug.Log(notesDict);
+            Debug.Log(locationDict);
+            Debug.Log("number of notes: " + GetNumberOfNotes());
+            Debug.Log("number of locations: " + GetNumberOfLocations());
+            Debug.Log("map name: " + name);
+            Debug.Log("map image path: " + imagePath);
+            Debug.Log("6");
+        }
+
+
+    }
+
+    [System.Serializable]
+    public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
+    {
+        [SerializeField]
+        private List<TKey> keys = new List<TKey>();
+
+        [SerializeField]
+        private List<TValue> values = new List<TValue>();
+
+        // save the dictionary to lists
+        public void OnBeforeSerialize()
+        {
+            keys.Clear();
+            values.Clear();
+            foreach (KeyValuePair<TKey, TValue> pair in this)
             {
-                Debug.Log("5" + part);
-                PostCard note = new PostCard("temp", System.DateTime.Now);
-                JsonUtility.FromJsonOverwrite("{" + part + "}", note);
-                notes.Add(note);
+                keys.Add(pair.Key);
+                values.Add(pair.Value);
             }
-        }   
+        }
 
-        //CONTINUE THIS
-        private void LoadLocationJson()
-        {   
-            //Initialize locationDict
-            locationDict = new Dictionary<string, LocationInfo>();
+        // load dictionary from lists
+        public void OnAfterDeserialize()
+        {
+            this.Clear();
+            Debug.Log("keys count: " + keys.Count);
+            Debug.Log("values count: " + values.Count);
+            if (keys.Count != values.Count)
+                throw new System.Exception(string.Format("there are {0} keys and {1} values after deserialization. Make sure that both key and value types are serializable."));
 
-            string json = System.IO.File.ReadAllText(Application.streamingAssetsPath + locationJsonPath);
-            json = json.TrimStart('{').TrimEnd('}');
-            string[] jsonLines = json.Split("},");
-            foreach (string part in jsonLines)
-            {
-                string[] twoparts = part.Split(":{");
+            for (int i = 0; i < keys.Count; i++)
+                this.Add(keys[i], values[i]);
+        }
+    }
 
-                string key = twoparts[0].TrimStart('"').TrimEnd('"');
-
-            }
-        }        
+    [System.Serializable]
+    public class JsonableListWrapper<T>
+    {
+        public List<T> list;
+        public JsonableListWrapper(List<T> list) => this.list = list;
+        public int Count => list.Count;
+        public T this[int index] => list[index];
+        public void Add(T item) => list.Add(item);
+        public void Remove(T item) => list.Remove(item);
 
     }
 }

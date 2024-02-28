@@ -2,36 +2,45 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using SpatialNotes;
+using TigerForge;
 
 public class Main : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        MapObject mapObject = new MapObject();
-        string mapImagePath = Application.streamingAssetsPath + "/demomap.jpg";
-        mapObject.CreateMap(_name: "KevinTest", _TEMP_IMAGE_PATH: mapImagePath);
+    private string mapToLoad;
+    private void Awake() {
+        //subscribe to the event
+        EventManager.StartListening("LOAD_MAP", LoadMap);
 
-        mapObject.AddLocation("123", "Location 1", "Description 1");
-        mapObject.AddLocation("12", "Location 2", "Description 2");
-        mapObject.AddLocation("1", "Location 3", "Description 3");
-
-        PostCard note = new PostCard(_title: "Test Note 1", _date: System.DateTime.Now);
-        mapObject.AddPostcard("123", note);
-        note = new PostCard(_title: "Test Note 2", _date: System.DateTime.Now);
-        mapObject.AddPostcard("123", note);
-        note = new PostCard(_title: "Test Note 3", _date: System.DateTime.Now);
-        mapObject.AddPostcard("12", note);
-        note = new PostCard(_title: "Test Note 4", _date: System.DateTime.Now);
-        mapObject.AddPostcard("1", note);
-
-        mapObject.SaveLocationJson();
-        mapObject.SaveNoteJson();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
+    private void LoadMap() {
+        mapToLoad = (string)EventManager.GetData("MAP_TO_LOAD");
+        // Load the map
+        if (mapToLoad == null) {
+            Debug.Log("No map to load");
+            return;
+        } else {
+            Debug.Log("Loading map: " + mapToLoad);
+        }
+
+        MapObject map = new MapObject();
+        map.LoadAll(mapToLoad);
+
+        // Get the map canvas
+        GameObject mapCanvas = GameObject.Find("MapCanvas");
+        if (mapCanvas == null) {
+            Debug.Log("MapCanvas not found");
+            return;
+        }
+        // Set image
+        Texture2D tex = map.image;
+        Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+        GameObject mapImage = mapCanvas.transform.Find("Image").gameObject;
+        mapImage.GetComponent<UnityEngine.UI.Image>().sprite = sprite;
+        Debug.Log("Map loaded");
         
+
+
     }
+
 }
