@@ -22,35 +22,43 @@ namespace SpatialNotes
         private bool _explorerActive = false;
 
         public GameObject _imageToCreateWith;
+        public string _pathToImageBeingCreated;
         public GameObject _mapNameInput;
 
         //pick mode enum { Files = 0, Folders = 1, FilesAndFolders = 2 };
+        private GameObject _contentScrollView;
 
 
-        // Refresh map panel
-        public void RefreshMapSelectPanel()
+        // Destroy all contentScrollView children 
+        public void DestroyAllChildren()
         {
-            // Clear the current list of items
-            GameObject scrollViewContent = this.gameObject.transform.Find("Viewport").Find("Content").gameObject;
-            foreach (Transform child in scrollViewContent.transform)
+            for (var i = _contentScrollView.transform.childCount - 1; i >= 0; i--)
             {
-                GameObject.Destroy(child.gameObject);
+                Destroy(_contentScrollView.transform.GetChild(i).gameObject);
             }
+        }
+
+        // Refresh map panel in a coroutine
+        public IEnumerator RefreshMapSelectPanelCoroutine()
+        {
+            DestroyAllChildren();
+
+            // wait for a 100ms
+            yield return new WaitForSeconds(0.1f);
 
             // Create a new list of items
-
-            string mapsDirectory = Application.streamingAssetsPath + "/Maps/";
+            _defaultPath = Application.streamingAssetsPath + "/Maps";
 
             // Get only directories, not files
-            string[] directories = Directory.GetDirectories(mapsDirectory);
-
+            string[] directories = Directory.GetDirectories(_defaultPath);
             List<string> items = new List<string>();
-
+            List<string> tbnPaths = new List<string>();
             foreach (string directoryPath in directories)
             {
                 // Extract the folder name from the path
                 string folderName = Path.GetFileName(directoryPath);
                 items.Add(folderName);
+                tbnPaths.Add(directoryPath + "/tbn.png");
             }
 
             // Create gameobjects as buttons that are children of the scroll view
@@ -58,28 +66,52 @@ namespace SpatialNotes
             {
                 //generic tmp button
                 GameObject button = Instantiate(buttonPrefab) as GameObject;
-                button.transform.SetParent(scrollViewContent.transform);
+
                 button.transform.localScale = new Vector3(1, 1, 1);
                 button.gameObject.name = "Button " + i;
+                button.transform.localPosition = new Vector3(0, 0, 0);
+                button.transform.localPosition = new Vector3(270, 600 + (-i * 1.20f * button.GetComponent<RectTransform>().rect.height), 0);
+                TMP_Text buttonText = button.GetComponentInChildren<TMP_Text>();
+                string buttonTextString = items[i];
+                //capitalize first letter
+                buttonTextString = char.ToUpper(buttonTextString[0]) + buttonTextString.Substring(1);
+                if (buttonTextString.Length > 20)
+                {
+                    buttonTextString = buttonTextString.Substring(0, 20) + "...";
+                }
+                buttonText.text = buttonTextString;
+                buttonText.fontSize = 18;
+                button.GetComponent<Button>().onClick.AddListener(ButtonFunction);
+                button.transform.SetParent(_contentScrollView.transform);
+
+                // Add image to button
+                string tbnPath = tbnPaths[i];
+                if (File.Exists(tbnPath))
+                {
+                    Texture2D texture = new Texture2D(2, 2);
+                    byte[] fileData = File.ReadAllBytes(tbnPath);
+                    texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                    UnityEngine.UI.Image buttonImg = button.transform.Find("Image").GetComponent<UnityEngine.UI.Image>();
+                    buttonImg.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+
+                }
+
+            
             }
 
-            // Offset content by twice the height of the button
-            for (int i = 0; i < items.Count; i++)
-            {
-                GameObject buttonObj = scrollViewContent.transform.GetChild(i).gameObject;
-                float buttonObjHeight = buttonObj.GetComponent<RectTransform>().rect.height;
-                buttonObj.transform.localPosition = new Vector3(0, (-i * 2 * buttonObjHeight) - 50, 0);
+            //update viewport size based on number of items
+            RectTransform contentRectTransform = _contentScrollView.GetComponent<RectTransform>();
+            contentRectTransform.sizeDelta = new Vector2(contentRectTransform.sizeDelta.x, items.Count * 1.5f * buttonPrefab.GetComponent<RectTransform>().rect.height + 100);
 
-                // Set text for tmp
-                scrollViewContent.transform.GetChild(i).GetComponentInChildren<TMP_Text>().text = items[i];
 
-                // Add a button function to the button
-                Button button = buttonObj.GetComponent<Button>();
-                button.onClick.AddListener(ButtonFunction);
-            }
+            yield return null;
+        }
 
-            // Set file browser default path
-            _defaultPath = Application.streamingAssetsPath + "/Maps";
+
+        // Refresh map panel
+        public void RefreshMapSelectPanel()
+        {
+            StartCoroutine(RefreshMapSelectPanelCoroutine());
         }
 
 
@@ -87,6 +119,7 @@ namespace SpatialNotes
         // Start is called before the first frame update
         void Start()
         {
+            _contentScrollView = this.gameObject.transform.Find("Viewport").Find("Content").gameObject;
             // Refresh the map select panel
             RefreshMapSelectPanel();
         }
@@ -97,6 +130,16 @@ namespace SpatialNotes
             string mapName = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.GetComponentInChildren<TMP_Text>().text;
             string buttonName = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name;
             Debug.Log("Button " + buttonName + " was clicked, map name: " + mapName);
+
+            // Instantiate messenger object
+            GameObject messenger = new GameObject();
+            messenger.tag = "Messenger";
+            messenger.AddComponent<MessengerObject>();
+            messenger.GetComponent<MessengerObject>().message = mapName;
+            messenger.name = "MessengerObject";
+            
+            //Change scene
+            UnityEngine.SceneManagement.SceneManager.LoadScene("MainScene");
         }
 
         // upload new map function
@@ -108,13 +151,31 @@ namespace SpatialNotes
             {
                 return;
             }
+            // Create the map
+            string mapName = _mapNameInput.GetComponent<TMP_InputField>().text;
+            mapName = mapName.Trim().Replace(" ", "_");
+            string mapPath = Application.streamingAssetsPath + "/Maps/" + mapName;
+            if (System.IO.Directory.Exists(mapPath))
+            {
+                TriggerPopup("Map " + mapName + " already exists", "Map Exists", "xmark");
+                return;
+            }
+            string mapImagePath = Application.streamingAssetsPath + "/Maps/" + mapName + "/map.jpg";
+            MapObject mapObject = new MapObject();
+            mapObject.CreateMap(_name: mapName, _TEMP_IMAGE_PATH: _pathToImageBeingCreated);
+            mapObject.SaveAll();
+            // Refresh the map select panel
+            RefreshMapSelectPanel();
+
+
             TriggerPopup(text: "Map " + _mapNameInput.GetComponent<TMP_InputField>().text + " created (NOT ACTUALLY, WIP)", title: "Map Created", imageName: "checkmark");
         }
 
         // upload image 
         public void OnClickUploadImage()
         {
-            _openFileExplorerToLoadImages();
+            //_openFileExplorerToLoadImages();
+            RefreshMapSelectPanel();
         }
 
         // Load existing folder
@@ -199,7 +260,7 @@ namespace SpatialNotes
                 {
                     return true;
                 }
-                
+
 
                 return false; // Filter files
             };
@@ -226,7 +287,7 @@ namespace SpatialNotes
                 string errorString = string.Join(", ", error);
                 Debug.Log("Error: " + errorString);
                 TriggerPopup("Error: " + errorString, "Error", "xmark");
-                
+
             }
             _explorerActive = false;
         }
@@ -277,6 +338,7 @@ namespace SpatialNotes
                 fileData = File.ReadAllBytes(selectedPath);
                 texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
                 _imageToCreateWith.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                _pathToImageBeingCreated = selectedPath;
             }
             else
             {
