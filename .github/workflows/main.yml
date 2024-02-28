@@ -14,9 +14,6 @@ jobs:
       matrix:
         targetPlatform:
           - StandaloneWindows # Build a Windows standalone.
-        language:
-          - csharp
-        
     steps:
       - uses: actions/checkout@v4
         with:
