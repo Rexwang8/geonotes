@@ -30,17 +30,16 @@ namespace SpatialNotes
 
             // Create a new map
             MapObject map = new MapObject();
-            map.name = mapName;
             //pull demomap from streamable assets
             string mapImagePath = Application.streamingAssetsPath + "/demomap.jpg";
             map.CreateMap(_name: mapName, _TEMP_IMAGE_PATH: mapImagePath);
 
-            // Create a new note
-            for (int i = 0; i < num; i++)
-            {
-                PostCard note = new PostCard(_title: "Test Note " + i, _date: System.DateTime.Now);
-                map.AddPostcard(note);
-            }
+            // // Create a new note
+            // for (int i = 0; i < num; i++)
+            // {
+            //     PostCard note = new PostCard(_title: "Test Note " + i, _date: System.DateTime.Now);
+            //     map.AddPostcard(note);
+            // }
 
             Debug.Log("Map " + mapName + " created with " + num + " notes");
         }

@@ -51,4 +51,16 @@ namespace SpatialNotes
             Debug.Log("Title: " + title + "Date: " + date);
         }
     }
+
+    public class LocationInfo
+    {
+        public string locationName; // Name of the location
+        public string description; // Path of location Image 
+
+        public LocationInfo(string _locationName, string _description)
+        {
+            locationName = _locationName;
+            description = _description;
+        }
+    }
 }
