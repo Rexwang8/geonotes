@@ -69,7 +69,7 @@ namespace SpatialNotes
                 button.transform.localScale = new Vector3(1, 1, 1);
                 button.gameObject.name = "Button " + i;
                 button.transform.localPosition = new Vector3(0, 0, 0);
-                button.transform.localPosition = new Vector3(280, 630 + (-i * 1.20f * button.GetComponent<RectTransform>().rect.height), 0);
+                button.transform.localPosition = new Vector3(420, 925 + (-i * 1.20f * button.GetComponent<RectTransform>().rect.height), 0);
                 TMP_Text buttonText = button.GetComponentInChildren<TMP_Text>();
                 string buttonTextString = items[i];
                 //capitalize first letter

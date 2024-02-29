@@ -85,7 +85,8 @@ namespace SpatialNotes
 
             }
 
-            if (Input.GetMouseButtonDown((int)mouseButton.Middle))
+            // middle mouse or esc button
+            if (Input.GetMouseButtonDown((int)mouseButton.Middle) || Input.GetKeyDown(KeyCode.Escape))
             {
                 _removeAllPins();
                 _hideRightClickMenu();
@@ -154,7 +155,7 @@ namespace SpatialNotes
                 Debug.Log("Pin Position: " + pins[i].transform.position);
             }
 
-           
+
         }
 
         private void _zoomOut()
@@ -164,7 +165,7 @@ namespace SpatialNotes
             {
                 return;
             }
-            
+
             // Get all pins
             List<GameObject> pins = new List<GameObject>();
             List<Vector3> pinPositions = new List<Vector3>();
@@ -243,7 +244,7 @@ namespace SpatialNotes
         {
             sideMenu.SetActive(true);
             _HideAllSideMenuBranches();
-                    }
+        }
 
         private void _showSideMenuCreateLocation()
         {
