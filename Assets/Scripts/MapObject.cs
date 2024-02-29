@@ -18,8 +18,8 @@ namespace SpatialNotes
         public string thumbnailPath; // Path of the thumbnail
 
 
-        SerializableDictionary<string, JsonableListWrapper<PostCard>> notesDict; // Dictionary of notes on the map
-        SerializableDictionary<string, LocationInfo> locationDict; // Dictionary of locations on the map
+        public SerializableDictionary<string, JsonableListWrapper<PostCard>> notesDict; // Dictionary of notes on the map
+        public SerializableDictionary<string, LocationInfo> locationDict; // Dictionary of locations on the map
 
 
         public Vector2Int imgSize; // Size of the image
@@ -344,7 +344,7 @@ namespace SpatialNotes
         }
 
         // helper to convert location coord string to vector3
-        private Vector3 _convertCoordStr2Vec3(string coordStr)
+        public Vector3 _convertCoordStr2Vec3(string coordStr)
         {
             string[] coordStrArr = coordStr.Split(',');
             float x = float.Parse(coordStrArr[0]);

@@ -6,11 +6,11 @@ using TigerForge;
 
 public class Main : MonoBehaviour
 {
+    public MapObject map;
     private string mapToLoad;
     private void Awake() {
         //subscribe to the event
         EventManager.StartListening("LOAD_MAP", LoadMap);
-
     }
 
     private void LoadMap() {
@@ -23,7 +23,7 @@ public class Main : MonoBehaviour
             Debug.Log("Loading map: " + mapToLoad);
         }
 
-        MapObject map = new MapObject();
+        map = new MapObject();
         map.LoadAll(mapToLoad);
 
         // Get the map canvas
@@ -38,9 +38,16 @@ public class Main : MonoBehaviour
         GameObject mapImage = mapCanvas.transform.Find("Image").gameObject;
         mapImage.GetComponent<UnityEngine.UI.Image>().sprite = sprite;
         Debug.Log("Map loaded");
-        
+    }
 
-
+    void Update()
+    {
+        //if s is pressed, save the map
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            Debug.Log("Saved Map");
+            map.SaveAll();
+        }
     }
 
 }

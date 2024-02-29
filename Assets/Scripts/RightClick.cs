@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 
 public class RightClick : MonoBehaviour
 {
+    public Vector3 location;
     public Canvas rightClickCanvas;
     public Canvas addLocationCanvas;
     public Button createButton;
@@ -34,7 +35,7 @@ public class RightClick : MonoBehaviour
 
             // Set the button's position to the mouse position
             rightClickCanvas.transform.position = new Vector3(worldPosition.x, worldPosition.y, transform.position.z);
-
+            location = rightClickCanvas.transform.position;
             if(!rightClickCanvas.enabled)
             {
                 rightClickCanvas.enabled = true;
