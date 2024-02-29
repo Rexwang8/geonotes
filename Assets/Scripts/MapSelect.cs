@@ -9,7 +9,6 @@ using UnityEditor;
 using SimpleFileBrowser;
 using TigerForge;
 
-
 namespace SpatialNotes
 {
     public class MapSelect : MonoBehaviour
@@ -70,7 +69,7 @@ namespace SpatialNotes
                 button.transform.localScale = new Vector3(1, 1, 1);
                 button.gameObject.name = "Button " + i;
                 button.transform.localPosition = new Vector3(0, 0, 0);
-                button.transform.localPosition = new Vector3(270, 600 + (-i * 1.20f * button.GetComponent<RectTransform>().rect.height), 0);
+                button.transform.localPosition = new Vector3(280, 630 + (-i * 1.20f * button.GetComponent<RectTransform>().rect.height), 0);
                 TMP_Text buttonText = button.GetComponentInChildren<TMP_Text>();
                 string buttonTextString = items[i];
                 //capitalize first letter
@@ -382,7 +381,7 @@ namespace SpatialNotes
 
             // Copy the folder to the streaming assets
             string destinationPath = Application.streamingAssetsPath + "/Maps/" + mapName;
-            FileUtil.CopyFileOrDirectory(selectedPath, destinationPath);
+            UnityEditor.FileUtil.CopyFileOrDirectory(selectedPath, destinationPath);
 
             // Refresh the map select panel
             RefreshMapSelectPanel();

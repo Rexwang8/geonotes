@@ -38,6 +38,13 @@ namespace SpatialNotes
             currentScene = SceneManager.GetActiveScene().name;
             //set do not destroy on load
             DontDestroyOnLoad(this.gameObject);
+            //send default message (DEBUG) if not in main menu scene
+            if (currentScene != "MainMenuScene")
+            {
+                setMessenger("dfgfgdfg");
+                // Raise the event
+                RaiseEvent();
+            }
         }
 
         void OnLevelWasLoaded(int level)
