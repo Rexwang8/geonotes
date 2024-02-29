@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace SpatialNotes
+{
+
 public class LocationHandler : MonoBehaviour
 {
     //Add location button
@@ -61,4 +64,5 @@ public class LocationHandler : MonoBehaviour
             Instantiate(pinPrefab, main.map._convertCoordStr2Vec3(location.Key), Quaternion.identity);
         }
     }
+}
 }
