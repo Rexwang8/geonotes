@@ -13,15 +13,13 @@ public class Main : MonoBehaviour
     private void Awake() {
         //subscribe to the event
         EventManager.StartListening("LOAD_MAP", LoadMap);
-    }
-
-    private void Start() {
         // Raise event if debug set to true
         if (debug) {
             EventManager.SetData("MAP_TO_LOAD", debugMap);
             EventManager.EmitEvent("LOAD_MAP");
         }
     }
+
 
 
     private void LoadMap() {

@@ -266,6 +266,17 @@ namespace SpatialNotes
             return count;
         }
 
+        // returns locations in dict format
+        public Dictionary<string, LocationInfo> GetLocations()
+        {
+            Dictionary<string, LocationInfo> locations = new Dictionary<string, LocationInfo>();
+            foreach (KeyValuePair<string, LocationInfo> location in locationDict)
+            {
+                locations.Add(location.Key, location.Value);
+            }
+            return locations;
+        }
+
         // Delete self
         public void DeleteMap()
         {
@@ -387,7 +398,6 @@ namespace SpatialNotes
         {
             string nameOfMapLowerCaseStripped = folderName.ToLower().Replace(" ", "");
             string path = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped + "/" + nameOfMapLowerCaseStripped + ".json";
-            Debug.Log("1" + path);
             string json = System.IO.File.ReadAllText(path);
             JsonUtility.FromJsonOverwrite(json, this);
 
@@ -397,28 +407,22 @@ namespace SpatialNotes
             mapJsonPath = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped + "/" + nameOfMapLowerCaseStripped + ".json";
             mapDirPath = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped;
 
-            Debug.Log("2");
             // Load image and thumbnail
             string imgPath = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped + "/img.png";
             byte[] imgBytes = System.IO.File.ReadAllBytes(imgPath);
             image = new Texture2D(imgSize.x, imgSize.y);
             image.LoadImage(imgBytes);
-            Debug.Log("3");
-            Debug.Log("imgSize: " + imgSize);
 
             string tbnPath = Application.streamingAssetsPath + "/Maps/" + nameOfMapLowerCaseStripped + "/tbn.png";
             byte[] tbnBytes = System.IO.File.ReadAllBytes(tbnPath);
             thumbnail = new Texture2D(tbnSize.x, tbnSize.y);
             thumbnail.LoadImage(tbnBytes);
-            Debug.Log("4");
-            Debug.Log("tbnSize: " + tbnSize);
 
             //get json path to notes and location
             notesJsonPath = "/Maps/" + nameOfMapLowerCaseStripped + "/notes/postcard.json";
             locationJsonPath = "/Maps/" + nameOfMapLowerCaseStripped + "/notes/location.json";
             mapJsonPath = "/Maps/" + nameOfMapLowerCaseStripped + "/" + nameOfMapLowerCaseStripped + ".json";
             mapDirPath = "/Maps/" + nameOfMapLowerCaseStripped;
-            Debug.Log("5");
 
             // Load notes and locations from JSON
             json = System.IO.File.ReadAllText(Application.streamingAssetsPath + notesJsonPath);
@@ -430,8 +434,6 @@ namespace SpatialNotes
             Debug.Log("number of notes: " + GetNumberOfNotes());
             Debug.Log("number of locations: " + GetNumberOfLocations());
             Debug.Log("map name: " + name);
-            Debug.Log("map image path: " + imagePath);
-            Debug.Log("6");
         }
 
 
@@ -462,8 +464,6 @@ namespace SpatialNotes
         public void OnAfterDeserialize()
         {
             this.Clear();
-            Debug.Log("keys count: " + keys.Count);
-            Debug.Log("values count: " + values.Count);
             if (keys.Count != values.Count)
                 throw new System.Exception(string.Format("there are {0} keys and {1} values after deserialization. Make sure that both key and value types are serializable."));
 
