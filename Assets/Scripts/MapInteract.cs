@@ -18,6 +18,7 @@ namespace SpatialNotes
         private GameObject emptySideMenuNoSelection;
         [SerializeField]
         private GameObject sideMenuCreateLocation;
+        private GameObject sideMenuShowLocation;
         private GameObject locationButtonAdd;
         private GameObject locationButtonCancel;
         private GameObject locationNameField;
@@ -48,6 +49,7 @@ namespace SpatialNotes
             // Get the empty side menu
             emptySideMenuNoSelection = sideMenu.transform.Find("SideMenuNoSelect").gameObject;
             sideMenuCreateLocation = sideMenu.transform.Find("SideMenuCreateLocation").gameObject;
+            sideMenuShowLocation = sideMenu.transform.Find("SideMenuExistingLocation").gameObject;
 
             // Get the location button
             GameObject AddPanel = sideMenuCreateLocation.transform.Find("AddLocation").gameObject;
@@ -91,6 +93,28 @@ namespace SpatialNotes
                 _zoomOut();
             }
             Vector2 uipos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+
+            // left click
+            if (Input.GetMouseButtonDown((int)mouseButton.Left))
+            {
+                _debugShowNearbyPinsToClick(uipos);
+                //Pulls up nearby location
+                GameObject closestLocation = _getClosestLocationToThreshold(uipos);
+                if (closestLocation == null) {
+                    // Hide the side menu
+                    _hideSideMenu();
+                    return;
+                }
+
+                // Pull up menu
+                _showSideMenuShowLocation();
+                // Set the location name
+                string locationName = closestLocation.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text;
+                sideMenuShowLocation.transform.Find("LocationText").GetComponent<TextMeshProUGUI>().text = locationName;
+
+
+            }
+
             // move right click menu to mouse position
             if (Input.GetMouseButtonDown((int)mouseButton.Right))
             {
@@ -102,6 +126,9 @@ namespace SpatialNotes
                 GameObject pin = Instantiate(pinPrefab, new Vector3(uipos.x, uipos.y, 0), Quaternion.identity);
                 pin.transform.SetParent(pinsFolder.transform);
                 pin.transform.position = new Vector3(uipos.x, uipos.y, 0);
+                //Populate pin name
+                GameObject pinName = pin.transform.Find("PinName").gameObject;
+                pinName.GetComponent<TextMeshProUGUI>().text = "Pin";
 
 
                 if (!_isRightClickMenuActive())
@@ -139,6 +166,9 @@ namespace SpatialNotes
                 pin.transform.SetParent(locationPinsFolder.transform);
                 pin.transform.position = new Vector3(coord.x, coord.y, 0);
 
+                //Populate pin name
+                GameObject pinName = pin.transform.Find("PinName").gameObject;
+                pinName.GetComponent<TextMeshProUGUI>().text = loc.Value.locationName;
 
             }
             
@@ -160,6 +190,9 @@ namespace SpatialNotes
             GameObject pin = Instantiate(pinPrefab, new Vector3(savedUiPosOnClick.x, savedUiPosOnClick.y, 0), Quaternion.identity);
             pin.transform.SetParent(locationPinsFolder.transform);
             pin.transform.position = new Vector3(savedUiPosOnClick.x, savedUiPosOnClick.y, 0);
+            //Populate pin name
+            GameObject pinName = pin.transform.Find("PinName").gameObject;
+            pinName.GetComponent<TextMeshProUGUI>().text = locationName;
 
             //call for save to file
             map.SaveAll();
@@ -201,6 +234,66 @@ namespace SpatialNotes
         {
             emptySideMenuNoSelection.SetActive(false);
             sideMenuCreateLocation.SetActive(false);
+        }
+
+        private GameObject _getClosestLocationToThreshold(Vector2 uipos)
+        {
+            float distThreshold = 10.0f / ZoomLevel;
+            // Get all pins
+            List<GameObject> locationPins = new List<GameObject>();
+            List<Vector3> locationPinPositions = new List<Vector3>();
+            foreach (Transform child in locationPinsFolder.transform)
+            {
+                locationPins.Add(child.gameObject);
+                locationPinPositions.Add(_convertMousePos2Coord(child.position));
+            }
+            // Get the location of the click
+            Vector3 coord = _convertMousePos2Coord(uipos);
+            // Get the distance to each pin
+            for (int i = 0; i < locationPins.Count; i++)
+            {
+                float distance = Vector3.Distance(coord, locationPinPositions[i]);
+                if (distance < distThreshold)
+                {
+                    return locationPins[i];
+                }
+            }
+            return null;
+        }
+
+        private void _debugShowNearbyPinsToClick(Vector2 uipos)
+        {
+            float distThreshold = 10.0f / ZoomLevel;
+            // Get all pins
+            List<GameObject> pins = new List<GameObject>();
+            List<Vector3> pinPositions = new List<Vector3>();
+            foreach (Transform child in pinsFolder.transform)
+            {
+                pins.Add(child.gameObject);
+                pinPositions.Add(_convertMousePos2Coord(child.position));
+            }
+            List<GameObject> locationPins = new List<GameObject>();
+            List<Vector3> locationPinPositions = new List<Vector3>();
+            foreach (Transform child in locationPinsFolder.transform)
+            {
+                locationPins.Add(child.gameObject);
+                locationPinPositions.Add(_convertMousePos2Coord(child.position));
+            }
+            // Get the location of the click
+            Vector3 coord = _convertMousePos2Coord(uipos);
+            // Get the distance to each pin
+            for (int i = 0; i < pins.Count; i++)
+            {
+                float distance = Vector3.Distance(coord, pinPositions[i]);
+                Debug.Log("Distance to pin " + i + " is " + distance + ", this is within the threshold: " + (distance < distThreshold));
+            }
+            for (int i = 0; i < locationPins.Count; i++)
+            {
+                float distance = Vector3.Distance(coord, locationPinPositions[i]);
+                Debug.Log("Distance to location pin " + i + " is " + distance + ", this is within the threshold: " + (distance < distThreshold));
+            }
+
+            
         }
 
         private void _zoomIn()
@@ -345,6 +438,13 @@ namespace SpatialNotes
             _showSideMenuEmpty();
             sideMenuCreateLocation.SetActive(true);
         }
+
+        private void _showSideMenuShowLocation()
+        {
+            _showSideMenuEmpty();
+            sideMenuShowLocation.SetActive(true);
+        }
+
 
         private Vector3 _convertMousePos2Coord(Vector2 mousePos)
         {
