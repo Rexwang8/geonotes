@@ -5,7 +5,6 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using System.IO;
 using System.Linq;
-using UnityEditor;
 using TigerForge;
 
 

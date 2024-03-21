@@ -7898,9 +7898,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   buttonPrefab: {fileID: 500513330430220715, guid: f0b159cc6ec94af4caddfc6028da3d21, type: 3}
-  _imageToCreateWith: {fileID: 1702322912}
+  _imageToCreateWith: {fileID: 0}
   _pathToImageBeingCreated: 
-  _mapNameInput: {fileID: 275351958}
+  _mapNameInput: {fileID: 0}
 --- !u!1 &1475962495
 GameObject:
   m_ObjectHideFlags: 0

@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using TMPro;
 using System.IO;
 using System.Linq;
-using UnityEditor;
 using SimpleFileBrowser;
 using TigerForge;
 
@@ -381,7 +380,15 @@ namespace SpatialNotes
 
             // Copy the folder to the streaming assets
             string destinationPath = Application.streamingAssetsPath + "/Maps/" + mapName;
-            UnityEditor.FileUtil.CopyFileOrDirectory(selectedPath, destinationPath);
+            System.IO.Directory.CreateDirectory(destinationPath);
+            string[] files = System.IO.Directory.GetFiles(selectedPath);
+            foreach (string file in files)
+            {
+                string fileName = Path.GetFileName(file);
+                string destFile = System.IO.Path.Combine(destinationPath, fileName);
+                System.IO.File.Copy(file, destFile, true);
+            }
+            
 
             // Refresh the map select panel
             RefreshMapSelectPanel();
