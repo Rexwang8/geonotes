@@ -39,6 +39,10 @@ namespace SpatialNotes
         public float minZoom = 1.0f;
 
         private enum mouseButton { Left, Right, Middle };
+        
+        //Variables needed for drag
+        private Vector3 dragOrigin;
+        private bool dragging = false;
 
         void Start()
         {
@@ -94,26 +98,23 @@ namespace SpatialNotes
             }
             Vector2 uipos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
 
-            // left click
-            if (Input.GetMouseButtonDown((int)mouseButton.Left))
-            {
-                _debugShowNearbyPinsToClick(uipos);
-                //Pulls up nearby location
-                GameObject closestLocation = _getClosestLocationToThreshold(uipos);
-                if (closestLocation == null) {
-                    // Hide the side menu
-                    _hideSideMenu();
-                    return;
-                }
+            // // left click
+            // if (Input.GetMouseButtonDown((int)mouseButton.Left))
+            // {
+            //     _debugShowNearbyPinsToClick(uipos);
+            //     //Pulls up nearby location
+            //     GameObject closestLocation = _getClosestLocationToThreshold(uipos);
+            //     if (closestLocation == null) {
+            //         // Hide the side menu
+            //         _hideSideMenu();
+            //     }
 
-                // Pull up menu
-                _showSideMenuShowLocation();
-                // Set the location name
-                string locationName = closestLocation.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text;
-                sideMenuShowLocation.transform.Find("LocationText").GetComponent<TextMeshProUGUI>().text = locationName;
-
-
-            }
+            //     // Pull up menu
+            //     _showSideMenuShowLocation();
+            //     // Set the location name
+            //     string locationName = closestLocation.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text;
+            //     sideMenuShowLocation.transform.Find("LocationText").GetComponent<TextMeshProUGUI>().text = locationName;
+            // }
 
             // move right click menu to mouse position
             if (Input.GetMouseButtonDown((int)mouseButton.Right))
@@ -147,7 +148,33 @@ namespace SpatialNotes
                 _removeAllPins(pinsFolder);
                 _hideRightClickMenu();
                 _hideSideMenu();
-                Debug.Log("Left Mouse Button Clicked");
+                Debug.Log("Middle Mouse Button Clicked");
+            }
+            
+
+            // Left Click Drag
+            if (Input.GetMouseButtonDown(0))
+            {
+                dragging = true;
+                dragOrigin = Input.mousePosition;
+                Debug.Log("Left Mouse Button Clicked: " + dragOrigin);
+                return;
+            }
+    
+            if (!Input.GetMouseButton(0))
+            {
+                dragging = false;
+                return;
+                Debug.Log("Left Mouse Button Released");
+            }
+            
+            if (dragging)
+            {
+                
+                Vector3 pos = Camera.main.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
+                Vector3 move = new Vector3(pos.x * 0.5f, pos.y * 0.5f, 0);
+                Debug.Log("Its dragging; move is " + move + " and pos is "+ pos + " and dragOrigin is " + dragOrigin);
+                cam.transform.Translate(move, Space.World); 
             }
         }
 
@@ -298,85 +325,95 @@ namespace SpatialNotes
 
         private void _zoomIn()
         {
-            if (ZoomLevel >= maxZoom)
+            // Zoom camera in 
+            Debug.Log("Zooming in: " + cam.transform.position.z);
+
+            if (cam.transform.position.z > -1)
             {
                 return;
             }
 
-            // Get all pins
-            List<GameObject> pins = new List<GameObject>();
-            List<Vector3> pinPositions = new List<Vector3>();
-            foreach (Transform child in pinsFolder.transform)
-            {
-                pins.Add(child.gameObject);
-                pinPositions.Add(_convertMousePos2Coord(child.position));
-            }
-            List<GameObject> locationPins = new List<GameObject>();
-            List<Vector3> locationPinPositions = new List<Vector3>();
-            foreach (Transform child in locationPinsFolder.transform)
-            {
-                locationPins.Add(child.gameObject);
-                locationPinPositions.Add(_convertMousePos2Coord(child.position));
-            }
-            ZoomLevel += 0.1f;
-            ZoomLevel = Mathf.Clamp(ZoomLevel, minZoom, maxZoom);
-            //change scale on the image
-            mapImageZoom.transform.localScale = new Vector3(ZoomLevel, ZoomLevel, 1);
-            _calcVisibleImageDims();
+            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z + 0.5f);
 
-            // Move the pins based on map zoom
-            for (int i = 0; i < pins.Count; i++)
-            {
-                pins[i].transform.position = _convertCoord2MousePos(pinPositions[i]);
-            }
-            for (int i = 0; i < locationPins.Count; i++)
-            {
-                locationPins[i].transform.position = _convertCoord2MousePos(locationPinPositions[i]);
-            }
+            // // Get all pins
+            // List<GameObject> pins = new List<GameObject>();
+            // List<Vector3> pinPositions = new List<Vector3>();
+            // foreach (Transform child in pinsFolder.transform)
+            // {
+            //     pins.Add(child.gameObject);
+            //     pinPositions.Add(_convertMousePos2Coord(child.position));
+            // }
+            // List<GameObject> locationPins = new List<GameObject>();
+            // List<Vector3> locationPinPositions = new List<Vector3>();
+            // foreach (Transform child in locationPinsFolder.transform)
+            // {
+            //     locationPins.Add(child.gameObject);
+            //     locationPinPositions.Add(_convertMousePos2Coord(child.position));
+            // }
+            // ZoomLevel += 0.1f;
+            // ZoomLevel = Mathf.Clamp(ZoomLevel, minZoom, maxZoom);
+            // //change scale on the image
+            // mapImageZoom.transform.localScale = new Vector3(ZoomLevel, ZoomLevel, 1);
+            // _calcVisibleImageDims();
+
+            // // Move the pins based on map zoom
+            // for (int i = 0; i < pins.Count; i++)
+            // {
+            //     pins[i].transform.position = _convertCoord2MousePos(pinPositions[i]);
+            // }
+            // for (int i = 0; i < locationPins.Count; i++)
+            // {
+            //     locationPins[i].transform.position = _convertCoord2MousePos(locationPinPositions[i]);
+            // }
 
 
         }
 
         private void _zoomOut()
         {
-            //guards
-            if (ZoomLevel <= minZoom)
-            {
-                return;
-            }
+            // Zoom camera out
+            Debug.Log("Xooming Out: " + cam.transform.position.z);
 
-            // Get all pins
-            List<GameObject> pins = new List<GameObject>();
-            List<Vector3> pinPositions = new List<Vector3>();
-            foreach (Transform child in pinsFolder.transform)
-            {
-                pins.Add(child.gameObject);
-                pinPositions.Add(_convertMousePos2Coord(child.position));
-            }
-            List<GameObject> locationPins = new List<GameObject>();
-            List<Vector3> locationPinPositions = new List<Vector3>();
-            foreach (Transform child in locationPinsFolder.transform)
-            {
-                locationPins.Add(child.gameObject);
-                locationPinPositions.Add(_convertMousePos2Coord(child.position));
-            }
-            ZoomLevel -= 0.1f;
-            ZoomLevel = Mathf.Clamp(ZoomLevel, minZoom, maxZoom);
-            //change scale on the image
-            mapImageZoom.transform.localScale = new Vector3(ZoomLevel, ZoomLevel, 1);
-            _calcVisibleImageDims();
+            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z - 0.5f);
 
-            // Move the pins based on map zoom
-            for (int i = 0; i < pins.Count; i++)
-            {
-                pins[i].transform.position = _convertCoord2MousePos(pinPositions[i]);
-            }
-            for (int i = 0; i < locationPins.Count; i++)
-            {
-                locationPins[i].transform.position = _convertCoord2MousePos(locationPinPositions[i]);
-            }
+            // //guards
+            // if (ZoomLevel <= minZoom)
+            // {
+            //     return;
+            // }
 
-            ZoomLevel = Mathf.Clamp(ZoomLevel, minZoom, maxZoom);
+            // // Get all pins
+            // List<GameObject> pins = new List<GameObject>();
+            // List<Vector3> pinPositions = new List<Vector3>();
+            // foreach (Transform child in pinsFolder.transform)
+            // {
+            //     pins.Add(child.gameObject);
+            //     pinPositions.Add(_convertMousePos2Coord(child.position));
+            // }
+            // List<GameObject> locationPins = new List<GameObject>();
+            // List<Vector3> locationPinPositions = new List<Vector3>();
+            // foreach (Transform child in locationPinsFolder.transform)
+            // {
+            //     locationPins.Add(child.gameObject);
+            //     locationPinPositions.Add(_convertMousePos2Coord(child.position));
+            // }
+            // ZoomLevel -= 0.1f;
+            // ZoomLevel = Mathf.Clamp(ZoomLevel, minZoom, maxZoom);
+            // //change scale on the image
+            // mapImageZoom.transform.localScale = new Vector3(ZoomLevel, ZoomLevel, 1);
+            // _calcVisibleImageDims();
+
+            // // Move the pins based on map zoom
+            // for (int i = 0; i < pins.Count; i++)
+            // {
+            //     pins[i].transform.position = _convertCoord2MousePos(pinPositions[i]);
+            // }
+            // for (int i = 0; i < locationPins.Count; i++)
+            // {
+            //     locationPins[i].transform.position = _convertCoord2MousePos(locationPinPositions[i]);
+            // }
+
+            // ZoomLevel = Mathf.Clamp(ZoomLevel, minZoom, maxZoom);
         }
 
         private Vector4 _calcVisibleImageDims()
