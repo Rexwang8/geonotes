@@ -42,7 +42,9 @@ namespace SpatialNotes
         
         //Variables needed for drag
         private Vector3 dragOrigin;
+        private Vector3 worldSpaceOrigin;
         private bool dragging = false;
+        private Vector3 dragChange;
 
         void Start()
         {
@@ -157,6 +159,7 @@ namespace SpatialNotes
             {
                 dragging = true;
                 dragOrigin = Input.mousePosition;
+                worldSpaceOrigin = cam.transform.position;
                 Debug.Log("Left Mouse Button Clicked: " + dragOrigin);
                 return;
             }
@@ -165,16 +168,21 @@ namespace SpatialNotes
             {
                 dragging = false;
                 return;
-                Debug.Log("Left Mouse Button Released");
             }
             
             if (dragging)
             {
-                
                 Vector3 pos = Camera.main.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
-                Vector3 move = new Vector3(pos.x * 0.5f, pos.y * 0.5f, 0);
+                Vector3 move = new Vector3(pos.x * 100, pos.y * 100, 0);
+                if (dragChange == null || move != dragChange)
+                {
+                    dragChange = move;
+                    cam.transform.position = worldSpaceOrigin - move;
+                }
+
                 Debug.Log("Its dragging; move is " + move + " and pos is "+ pos + " and dragOrigin is " + dragOrigin);
-                cam.transform.Translate(move, Space.World); 
+                //cam.transform.Translate(move, Space.World); 
+                //move camera to move
             }
         }
 
@@ -333,7 +341,7 @@ namespace SpatialNotes
                 return;
             }
 
-            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z + 0.5f);
+            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z + 1.0f);
 
             // // Get all pins
             // List<GameObject> pins = new List<GameObject>();
@@ -374,7 +382,7 @@ namespace SpatialNotes
             // Zoom camera out
             Debug.Log("Xooming Out: " + cam.transform.position.z);
 
-            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z - 0.5f);
+            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z - 1.0f);
 
             // //guards
             // if (ZoomLevel <= minZoom)
