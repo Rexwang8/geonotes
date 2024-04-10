@@ -10,6 +10,9 @@ public class Main : MonoBehaviour
     private string mapToLoad;
     public bool debug = true;
     public string debugMap = "dfgdfgdfg";
+
+    public Color backgroundColor = new Color(0.5f, 0.5f, 0.5f, 1.0f);
+
     private void Awake() {
         //subscribe to the event
         EventManager.StartListening("LOAD_MAP", LoadMap);
@@ -46,24 +49,38 @@ public class Main : MonoBehaviour
         float screenHeight = Screen.height;
         Debug.Log("Screen width: " + tex.width + " Screen height: " + tex.height);
         Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-        GameObject mapImage = mapCanvas.transform.Find("MapImage").GetChild(0).gameObject; //get child of mapImage
+        GameObject mapImage = mapCanvas.transform.Find("MapImage").GetChild(2).gameObject; //get child of mapImage
         //Adjust the height and width of the map image to match the sprite
         RectTransform rt = mapImage.GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(tex.width, tex.height);
 
         mapImage.GetComponent<UnityEngine.UI.Image>().sprite = sprite;
+
+        GameObject mapBorder = mapCanvas.transform.Find("MapImage").GetChild(1).gameObject; //get border
+        //Adjust the height and width of the map border to match the sprite + 25 pixels
+        rt = mapBorder.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(tex.width + 25, tex.height + 25);
+
+        // Set the background color
+        GameObject mapBackground = mapCanvas.transform.Find("MapImage").GetChild(0).gameObject; //get background
+        mapBackground.GetComponent<UnityEngine.UI.Image>().color = backgroundColor;
+
         
-        Debug.Log("Screen width: " + screenWidth + " Screen height: " + screenHeight);
+
+
+
+        
+        //Debug.Log("Screen width: " + screenWidth + " Screen height: " + screenHeight);
         
         //Scale the map to fit the screen
-        float scale = 0.1f;
-        float amtScaledToScreen = 0.95f;
-        while (tex.width * scale < amtScaledToScreen * screenWidth && tex.height * scale < amtScaledToScreen * screenHeight) {
-            scale += 0.01f;
-        }
-        mapImage.transform.localScale = new Vector3(scale, scale, 1);
-        GameObject EverythingElse = GameObject.Find("EverythingElseScaled");
-        EverythingElse.transform.localScale = new Vector3(scale, scale, 1);
+        //float scale = 0.1f;
+        //float amtScaledToScreen = 0.95f;
+        //while (tex.width * scale < amtScaledToScreen * screenWidth && tex.height * scale < amtScaledToScreen * screenHeight) {
+        //    scale += 0.01f;
+        //}
+        //mapImage.transform.localScale = new Vector3(scale, scale, 1);
+        //GameObject EverythingElse = GameObject.Find("EverythingElseScaled");
+        //EverythingElse.transform.localScale = new Vector3(scale, scale, 1);
 
         // Set the map canvas to active
         Debug.Log("Map loaded");
