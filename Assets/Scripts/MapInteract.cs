@@ -11,18 +11,17 @@ namespace SpatialNotes
 
     public class MapInteract : MonoBehaviour
     {
-        public Vector3 location;
-        public GameObject rightClickObject;
-        public GameObject sideMenu;
+        private GameObject sideMenuNoSelectAddLocButton;
+        private GameObject sideMenu;
         [SerializeField]
         private GameObject emptySideMenuNoSelection;
         [SerializeField]
         private GameObject sideMenuCreateLocation;
         private GameObject sideMenuShowLocation;
-        private GameObject locationButtonAdd;
-        private GameObject locationButtonCancel;
-        private GameObject locationNameField;
-        private GameObject locationDescriptionField;
+        private GameObject sideMenuCreateLocationButtonAdd;
+        private GameObject sideMenuCreateLocationButtonCancel;
+        private GameObject sideMenuCreateLocationNameField;
+        private GameObject sideMenuCreateLocationDescriptionField;
         public GameObject pinsFolder;
         public GameObject locationPinsFolder;
         public GameObject pinPrefab;
@@ -30,13 +29,20 @@ namespace SpatialNotes
         public Camera cam;
         public Main main;
         public MapObject map;
-        public GameObject mapCanvas;
-        public GameObject mapImageZoom;
+        private GameObject mapCanvas;
+        private GameObject mapImageZoom;
         private Vector3 savedUiPosOnClick;
 
+        private GameObject zoomScrollBar;
+        private GameObject staticCanvas;
+
         public float ZoomLevel = 1.0f;
-        public float maxZoom = 5.0f;
-        public float minZoom = 1.0f;
+        public float maxZoom = 50.0f;
+        public float startingZoomPercent = 0.25f;
+        private float currentZoom = 0.0f;
+        public float minZoom = 0.0f;
+        public float zoomSpeed = 2.0f;
+        public float panSpeed = 1.3f;
 
         private enum mouseButton { Left, Right, Middle };
         
@@ -46,29 +52,17 @@ namespace SpatialNotes
         private bool dragging = false;
         private Vector3 dragChange;
 
+        private Vector3 lastSelectedLocation;
+        private Vector3 lastCandidateUiPos;
+
         void Start()
         {
             createButton.onClick.AddListener(addButtonClick);
             map = main.map;
             map.DisplayMapInfo();
 
-            // Get the empty side menu
-            emptySideMenuNoSelection = sideMenu.transform.Find("SideMenuNoSelect").gameObject;
-            sideMenuCreateLocation = sideMenu.transform.Find("SideMenuCreateLocation").gameObject;
-            sideMenuShowLocation = sideMenu.transform.Find("SideMenuExistingLocation").gameObject;
-
-            // Get the location button
-            GameObject AddPanel = sideMenuCreateLocation.transform.Find("AddLocation").gameObject;
-            locationButtonAdd = AddPanel.transform.Find("Add").gameObject;
-            locationButtonCancel = AddPanel.transform.Find("Cancel").gameObject;
-            locationDescriptionField = AddPanel.transform.Find("Description").gameObject;
-            locationNameField = AddPanel.transform.Find("Name").gameObject;
-            // Add button listeners
-            locationButtonAdd.GetComponent<Button>().onClick.AddListener(LocationAdd);
-            locationButtonCancel.GetComponent<Button>().onClick.AddListener(LocationCancel);
-            
-
-            // Get the map canvas
+            //get canvas
+            staticCanvas = GameObject.Find("StaticCanvas");
             mapCanvas = GameObject.Find("MapCanvas");
             if (mapCanvas == null)
             {
@@ -76,10 +70,35 @@ namespace SpatialNotes
                 return;
             }
             // Get the map image
-            mapImageZoom = mapCanvas.transform.Find("ImageZoom").gameObject;
+            mapImageZoom = mapCanvas.transform.Find("MapImage").gameObject;
 
-            rightClickObject.SetActive(false);
-            sideMenu.SetActive(false);
+            // Get Scroll Bar for zooming
+            zoomScrollBar = GameObject.Find("ScrollZoomBar").transform.GetChild(0).gameObject;
+            //define initial, min, max zoom
+            zoomScrollBar.GetComponent<Scrollbar>().value = startingZoomPercent;
+            currentZoom = maxZoom * startingZoomPercent;
+
+            // Get the empty side menu
+            sideMenu = staticCanvas.transform.Find("SideMenuEmpty").gameObject;
+            emptySideMenuNoSelection = sideMenu.transform.Find("SideMenuNoSelect").gameObject;
+            sideMenuCreateLocation = sideMenu.transform.Find("SideMenuCreateLocation").gameObject;
+            sideMenuShowLocation = sideMenu.transform.Find("SideMenuExistingLocation").gameObject;
+
+            // Get the location button
+            sideMenuCreateLocationButtonAdd = sideMenuCreateLocation.transform.Find("Add").gameObject;
+            sideMenuCreateLocationButtonCancel = sideMenuCreateLocation.transform.Find("Cancel").gameObject;
+            sideMenuCreateLocationDescriptionField = sideMenuCreateLocation.transform.Find("Description").gameObject;
+            sideMenuCreateLocationNameField = sideMenuCreateLocation.transform.Find("Name").gameObject;
+            sideMenuNoSelectAddLocButton = emptySideMenuNoSelection.transform.Find("AddLocButton").gameObject;
+            
+            // Add button listeners
+            sideMenuCreateLocationButtonAdd.GetComponent<Button>().onClick.AddListener(LocationAdd);
+            sideMenuCreateLocationButtonCancel.GetComponent<Button>().onClick.AddListener(LocationCancel);
+            sideMenuNoSelectAddLocButton.GetComponent<Button>().onClick.AddListener(_existingMenuAddLocButton);
+            
+
+            _removeAllPins(pinsFolder);
+            _hideSideMenu();
 
             //load locations
             OnStartLoadLocations();
@@ -98,91 +117,62 @@ namespace SpatialNotes
             {
                 _zoomOut();
             }
-            Vector2 uipos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-
-            // // left click
-            // if (Input.GetMouseButtonDown((int)mouseButton.Left))
-            // {
-            //     _debugShowNearbyPinsToClick(uipos);
-            //     //Pulls up nearby location
-            //     GameObject closestLocation = _getClosestLocationToThreshold(uipos);
-            //     if (closestLocation == null) {
-            //         // Hide the side menu
-            //         _hideSideMenu();
-            //     }
-
-            //     // Pull up menu
-            //     _showSideMenuShowLocation();
-            //     // Set the location name
-            //     string locationName = closestLocation.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text;
-            //     sideMenuShowLocation.transform.Find("LocationText").GetComponent<TextMeshProUGUI>().text = locationName;
-            // }
 
             // move right click menu to mouse position
             if (Input.GetMouseButtonDown((int)mouseButton.Right))
             {
                 _removeAllPins(pinsFolder);
-                _hideRightClickMenu();
-                rightClickObject.transform.position = new Vector3(uipos.x + 100, uipos.y + 10, 0);
-
                 //Instantiate Pin
-                GameObject pin = Instantiate(pinPrefab, new Vector3(uipos.x, uipos.y, 0), Quaternion.identity);
+                lastCandidateUiPos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0);
+                lastSelectedLocation = lastCandidateUiPos;
+                Vector3 worldClickPos = _getWorldClickPosition(lastSelectedLocation);
+                Debug.Log("Right Clicked at: " + worldClickPos + " " + lastCandidateUiPos + " " + Input.mousePosition + " " + cam.ScreenToWorldPoint(lastCandidateUiPos));
+                GameObject pin = Instantiate(pinPrefab, new Vector3(worldClickPos.x, worldClickPos.y, 1), Quaternion.identity);
                 pin.transform.SetParent(pinsFolder.transform);
-                pin.transform.position = new Vector3(uipos.x, uipos.y, 0);
+                //pin.transform.position = new Vector3(worldClickPos.x, worldClickPos.y, 1);
                 //Populate pin name
                 GameObject pinName = pin.transform.Find("PinName").gameObject;
-                pinName.GetComponent<TextMeshProUGUI>().text = "Pin";
-
-
-                if (!_isRightClickMenuActive())
-                {
-                    savedUiPosOnClick = uipos;
-                    _showRightClickMenu();
-                }
+                pinName.GetComponent<TextMeshProUGUI>().text = "Selected Location";
                 _HideAllSideMenuBranches();
                 _showSideMenuNoSelection();
-
             }
 
             // middle mouse or esc button
             if (Input.GetMouseButtonDown((int)mouseButton.Middle) || Input.GetKeyDown(KeyCode.Escape))
             {
                 _removeAllPins(pinsFolder);
-                _hideRightClickMenu();
                 _hideSideMenu();
                 Debug.Log("Middle Mouse Button Clicked");
             }
             
 
             // Left Click Drag
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown((int)mouseButton.Left))
             {
                 dragging = true;
                 dragOrigin = Input.mousePosition;
                 worldSpaceOrigin = cam.transform.position;
                 Debug.Log("Left Mouse Button Clicked: " + dragOrigin);
                 return;
-            }
-    
-            if (!Input.GetMouseButton(0))
+            } 
+            else if (Input.GetMouseButtonUp((int)mouseButton.Left))
             {
                 dragging = false;
                 return;
             }
             
+            // Dragging
             if (dragging)
             {
                 Vector3 pos = Camera.main.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
-                Vector3 move = new Vector3(pos.x * 100, pos.y * 100, 0);
+                float zoomAdjustedPanSpeed = Mathf.Clamp((float)(panSpeed * (1 - currentZoom / maxZoom)), 0.15f * panSpeed, 2.0f * panSpeed);
+                Debug.Log("Pan Speed: " + zoomAdjustedPanSpeed + " " + panSpeed + " " + maxZoom + " " + currentZoom + " " + (maxZoom - currentZoom / maxZoom));
+                Vector3 move = new Vector3(pos.x * 100 * zoomAdjustedPanSpeed, pos.y * 100 * zoomAdjustedPanSpeed, 0);
                 if (dragChange == null || move != dragChange)
                 {
                     dragChange = move;
                     cam.transform.position = worldSpaceOrigin - move;
                 }
-
-                Debug.Log("Its dragging; move is " + move + " and pos is "+ pos + " and dragOrigin is " + dragOrigin);
-                //cam.transform.Translate(move, Space.World); 
-                //move camera to move
             }
         }
 
@@ -195,42 +185,55 @@ namespace SpatialNotes
             foreach (KeyValuePair<string, LocationInfo> loc in locations)
             {
                 //add pin to the map
-                Vector3 coord = _convertCoord2MousePos(map._convertCoordStr2Vec3(loc.Key));
+                Vector3 coord = map._convertCoordStr2Vec3(loc.Key);
                 Debug.Log("Adding pin to the map for location: " + loc.Value.locationName + "at location: " + coord);
-                GameObject pin = Instantiate(pinPrefab, new Vector3(coord.x, coord.y, 0), Quaternion.identity);
+                GameObject pin = Instantiate(pinPrefab, new Vector3(coord.x, coord.y, 1), Quaternion.identity);
                 pin.transform.SetParent(locationPinsFolder.transform);
-                pin.transform.position = new Vector3(coord.x, coord.y, 0);
 
                 //Populate pin name
                 GameObject pinName = pin.transform.Find("PinName").gameObject;
                 pinName.GetComponent<TextMeshProUGUI>().text = loc.Value.locationName;
 
+                //pins of locations are green
+                pin.GetComponent<Image>().color = Color.green;
+
             }
             
+        }
+
+        private void _existingMenuAddLocButton()
+        {
+            _showSideMenuCreateLocation();
         }
 
 
         public void LocationAdd()
         {
             Debug.Log("Location Added");
-            Vector3 coord = _convertMousePos2Coord(savedUiPosOnClick);
-            string locationName = locationNameField.GetComponent<InputField>().text;
-            string locationDescription = locationDescriptionField.GetComponent<InputField>().text;
+            Vector3 coord = _getWorldClickPosition(lastSelectedLocation);
+            string locationName = sideMenuCreateLocationNameField.GetComponent<InputField>().text;
+            string locationDescription = sideMenuCreateLocationDescriptionField.GetComponent<InputField>().text;
             Debug.Log(savedUiPosOnClick + " " + coord + " " + locationName + " " + locationDescription);
             //Add location to the database
             map.AddLocation(locCoord: coord, locName: locationName, locDescription: locationDescription);
             Debug.Log("Location Added to the database, new location count: " + map.GetNumberOfLocations());
 
             //add pin to the map
-            GameObject pin = Instantiate(pinPrefab, new Vector3(savedUiPosOnClick.x, savedUiPosOnClick.y, 0), Quaternion.identity);
+            GameObject pin = Instantiate(pinPrefab, new Vector3(coord.x, coord.y, 1), Quaternion.identity);
             pin.transform.SetParent(locationPinsFolder.transform);
-            pin.transform.position = new Vector3(savedUiPosOnClick.x, savedUiPosOnClick.y, 0);
             //Populate pin name
             GameObject pinName = pin.transform.Find("PinName").gameObject;
             pinName.GetComponent<TextMeshProUGUI>().text = locationName;
 
+            //pins of locations are green
+            pin.GetComponent<Image>().color = Color.green;
+
             //call for save to file
             map.SaveAll();
+
+            //clear the fields for the next location
+            sideMenuCreateLocationNameField.GetComponent<InputField>().text = "";
+            sideMenuCreateLocationDescriptionField.GetComponent<InputField>().text = "";
 
 
             //Close the add location canvas
@@ -239,20 +242,6 @@ namespace SpatialNotes
         public void LocationCancel()
         {
             _hideSideMenu();
-        }
-        private void _hideRightClickMenu()
-        {
-            rightClickObject.SetActive(false);
-        }
-
-        private void _showRightClickMenu()
-        {
-            rightClickObject.SetActive(true);
-
-        }
-        private bool _isRightClickMenuActive()
-        {
-            return rightClickObject.activeInHierarchy;
         }
 
         private bool _getSideMenUIsActive()
@@ -334,45 +323,17 @@ namespace SpatialNotes
         private void _zoomIn()
         {
             // Zoom camera in 
-            Debug.Log("Zooming in: " + cam.transform.position.z);
-
-            if (cam.transform.position.z > -1)
+            float _zoomAmt = zoomSpeed;
+            //don't zoom if we are at the max zoom
+            if (currentZoom + _zoomAmt > maxZoom)
             {
                 return;
             }
+            currentZoom += _zoomAmt;
+            
+            zoomScrollBar.GetComponent<Scrollbar>().value = currentZoom / maxZoom;
 
-            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z + 1.0f);
-
-            // // Get all pins
-            // List<GameObject> pins = new List<GameObject>();
-            // List<Vector3> pinPositions = new List<Vector3>();
-            // foreach (Transform child in pinsFolder.transform)
-            // {
-            //     pins.Add(child.gameObject);
-            //     pinPositions.Add(_convertMousePos2Coord(child.position));
-            // }
-            // List<GameObject> locationPins = new List<GameObject>();
-            // List<Vector3> locationPinPositions = new List<Vector3>();
-            // foreach (Transform child in locationPinsFolder.transform)
-            // {
-            //     locationPins.Add(child.gameObject);
-            //     locationPinPositions.Add(_convertMousePos2Coord(child.position));
-            // }
-            // ZoomLevel += 0.1f;
-            // ZoomLevel = Mathf.Clamp(ZoomLevel, minZoom, maxZoom);
-            // //change scale on the image
-            // mapImageZoom.transform.localScale = new Vector3(ZoomLevel, ZoomLevel, 1);
-            // _calcVisibleImageDims();
-
-            // // Move the pins based on map zoom
-            // for (int i = 0; i < pins.Count; i++)
-            // {
-            //     pins[i].transform.position = _convertCoord2MousePos(pinPositions[i]);
-            // }
-            // for (int i = 0; i < locationPins.Count; i++)
-            // {
-            //     locationPins[i].transform.position = _convertCoord2MousePos(locationPinPositions[i]);
-            // }
+            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z + _zoomAmt);
 
 
         }
@@ -380,48 +341,26 @@ namespace SpatialNotes
         private void _zoomOut()
         {
             // Zoom camera out
-            Debug.Log("Xooming Out: " + cam.transform.position.z);
+            float _zoomAmt = zoomSpeed;
+            //don't zoom if we are at the min zoom
+            if (currentZoom - _zoomAmt < minZoom)
+            {
+                return;
+            }
+            currentZoom -= _zoomAmt;
+            zoomScrollBar.GetComponent<Scrollbar>().value = currentZoom / maxZoom;
 
-            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z - 1.0f);
+            cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z - zoomSpeed);
+        }
 
-            // //guards
-            // if (ZoomLevel <= minZoom)
-            // {
-            //     return;
-            // }
+        private Vector3 _getWorldClickPosition(Vector3 lastCandidateUiPos)
+        {
+            //adjust for camera offset
+            lastCandidateUiPos.z = Mathf.Abs(cam.transform.position.z);
+            //lastCandidateUiPos.x = lastCandidateUiPos.x;
+            //lastCandidateUiPos.y = lastCandidateUiPos.y;
 
-            // // Get all pins
-            // List<GameObject> pins = new List<GameObject>();
-            // List<Vector3> pinPositions = new List<Vector3>();
-            // foreach (Transform child in pinsFolder.transform)
-            // {
-            //     pins.Add(child.gameObject);
-            //     pinPositions.Add(_convertMousePos2Coord(child.position));
-            // }
-            // List<GameObject> locationPins = new List<GameObject>();
-            // List<Vector3> locationPinPositions = new List<Vector3>();
-            // foreach (Transform child in locationPinsFolder.transform)
-            // {
-            //     locationPins.Add(child.gameObject);
-            //     locationPinPositions.Add(_convertMousePos2Coord(child.position));
-            // }
-            // ZoomLevel -= 0.1f;
-            // ZoomLevel = Mathf.Clamp(ZoomLevel, minZoom, maxZoom);
-            // //change scale on the image
-            // mapImageZoom.transform.localScale = new Vector3(ZoomLevel, ZoomLevel, 1);
-            // _calcVisibleImageDims();
-
-            // // Move the pins based on map zoom
-            // for (int i = 0; i < pins.Count; i++)
-            // {
-            //     pins[i].transform.position = _convertCoord2MousePos(pinPositions[i]);
-            // }
-            // for (int i = 0; i < locationPins.Count; i++)
-            // {
-            //     locationPins[i].transform.position = _convertCoord2MousePos(locationPinPositions[i]);
-            // }
-
-            // ZoomLevel = Mathf.Clamp(ZoomLevel, minZoom, maxZoom);
+            return cam.ScreenToWorldPoint(lastCandidateUiPos);
         }
 
         private Vector4 _calcVisibleImageDims()
@@ -449,24 +388,14 @@ namespace SpatialNotes
         {
             sideMenu.SetActive(true);
             _HideAllSideMenuBranches();
-            Vector2 uipos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-            Vector3 coord = _convertMousePos2Coord(uipos);
+
+            Vector3 coord = _getWorldClickPosition(lastSelectedLocation);
 
             //Set text to the location
             TextMeshProUGUI locationText = emptySideMenuNoSelection.transform.Find("LocationText").GetComponent<TextMeshProUGUI>();
-            locationText.text = "Location: (" + coord.x + ", " + coord.y + ", " + coord.z + ")";
-            Vector4 visibleDims = _calcVisibleImageDims();
+            locationText.text = "Location: (" + coord.x + ", " + coord.y + ")";
             TextMeshProUGUI DescriptionText = emptySideMenuNoSelection.transform.Find("DescriptionText").GetComponent<TextMeshProUGUI>();
-            DescriptionText.text = "Visible Dims: (" + visibleDims.x + ", " + visibleDims.y + ", " + visibleDims.z + ", " + visibleDims.w + ")";
-            DescriptionText.text += "\n" + "Zoom Level: " + ZoomLevel;
-            Vector2 centerPoint = _calcCenterpoint(visibleDims);
-            DescriptionText.text += "\n" + "Center Point: (" + centerPoint.x + ", " + centerPoint.y + ")";
-            Vector2 visibleSize = _calcVisibleSize(visibleDims);
-            DescriptionText.text += "\n" + "Visible Size: (" + visibleSize.x + ", " + visibleSize.y + ")";
-            DescriptionText.text += "\n" + "UIPos as a percentage: (" + uipos.x / Screen.width + ", " + uipos.y / Screen.height + ")";
-            Vector2 coordActualLocation = _convertMousePos2Coord(_convertMousePos2Coord(uipos));
-            DescriptionText.text += "\n" + "Coord Actual Location: (" + coordActualLocation.x + ", " + coordActualLocation.y + ")";
-
+            DescriptionText.text = "Description: ";
 
             emptySideMenuNoSelection.SetActive(true);
 
