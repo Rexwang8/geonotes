@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using NaughtyAttributes;
+using UnityEngine.EventSystems;
+using TigerForge;
 using TMPro;
 namespace SpatialNotes
 {
@@ -19,16 +21,28 @@ namespace SpatialNotes
         void Show()
         {
             helpPanel.SetActive(true);
+            EventManager.SetData("CURSOR_NAME", "QUESTION");
+            EventManager.EmitEvent("CURSOR_REFRESH");
+
         }
 
         void Hide()
         {
             helpPanel.SetActive(false);
+            EventManager.SetData("CURSOR_NAME", "NORMAL");
+            EventManager.EmitEvent("CURSOR_REFRESH");
         }
 
         public void Toggle()
         {
-            helpPanel.SetActive(!helpPanel.activeSelf);
+            if (helpPanel.activeSelf)
+            {
+                Hide();
+            }
+            else
+            {
+                Show();
+            }
         }
     }
 }

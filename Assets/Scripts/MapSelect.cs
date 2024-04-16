@@ -41,8 +41,14 @@ namespace SpatialNotes
         {
             DestroyAllChildren();
 
-            // wait for a 100ms
-            yield return new WaitForSeconds(0.1f);
+            // wait for a 200ms
+            yield return new WaitForSeconds(0.2f);
+            Debug.Log("Remaing number of children: " + _contentScrollView.transform.childCount);
+            if (_contentScrollView.transform.childCount > 0)
+            {
+                Debug.Log("Children not destroyed (could be first frame)");
+                yield return null;
+            }
 
             // Create a new list of items
             _defaultPath = Application.streamingAssetsPath + "/Maps";
@@ -65,10 +71,8 @@ namespace SpatialNotes
                 //generic tmp button
                 GameObject button = Instantiate(buttonPrefab) as GameObject;
 
-                button.transform.localScale = new Vector3(1, 1, 1);
                 button.gameObject.name = "Button " + i;
-                button.transform.localPosition = new Vector3(0, 0, 0);
-                button.transform.localPosition = new Vector3(400, 925 + (-i * 1.20f * button.GetComponent<RectTransform>().rect.height), 0);
+                
                 TMP_Text buttonText = button.GetComponentInChildren<TMP_Text>();
                 string buttonTextString = items[i];
                 //capitalize first letter
@@ -81,6 +85,8 @@ namespace SpatialNotes
                 buttonText.fontSize = 18;
                 button.GetComponent<Button>().onClick.AddListener(ButtonFunction);
                 button.transform.SetParent(_contentScrollView.transform);
+                button.transform.localScale = new Vector3(1, 1, 1);
+                button.transform.localPosition = new Vector3(250, (-i * 1.5f * buttonPrefab.GetComponent<RectTransform>().rect.height) - 100, 0);
 
                 // Add image to button
                 string tbnPath = tbnPaths[i];
@@ -94,7 +100,7 @@ namespace SpatialNotes
 
                 }
 
-            
+
             }
 
             //update viewport size based on number of items
@@ -105,11 +111,24 @@ namespace SpatialNotes
             yield return null;
         }
 
+        // Refresh map panel in a coroutine, delayed by 1s
+        public IEnumerator RefreshMapSelectPanelCoroutineDelayed()
+        {
+            yield return new WaitForSeconds(0.25f);
+            RefreshMapSelectPanel();
+        }
+
 
         // Refresh map panel
         public void RefreshMapSelectPanel()
         {
             StartCoroutine(RefreshMapSelectPanelCoroutine());
+        }
+
+        // Refresh map panel about 1s from start
+        public void RefreshMapSelectPanelDelayed()
+        {
+            StartCoroutine(RefreshMapSelectPanelCoroutineDelayed());
         }
 
 
@@ -120,6 +139,7 @@ namespace SpatialNotes
             _contentScrollView = this.gameObject.transform.Find("Viewport").Find("Content").gameObject;
             // Refresh the map select panel
             RefreshMapSelectPanel();
+            RefreshMapSelectPanelDelayed();
         }
 
         // Generic button function
@@ -135,7 +155,7 @@ namespace SpatialNotes
             messenger.AddComponent<MessengerObject>();
             messenger.GetComponent<MessengerObject>().message = mapName;
             messenger.name = "MessengerObject";
-            
+
             //Change scene
             UnityEngine.SceneManagement.SceneManager.LoadScene("MainScene");
         }
@@ -172,7 +192,13 @@ namespace SpatialNotes
         // upload image 
         public void OnClickUploadImage()
         {
-            //_openFileExplorerToLoadImages();
+            _openFileExplorerToLoadImages();
+            RefreshMapSelectPanel();
+        }
+
+        // Debug - refresh map select panel
+        public void OnClickRefresh()
+        {
             RefreshMapSelectPanel();
         }
 
@@ -281,10 +307,18 @@ namespace SpatialNotes
             }
             else
             {
-                string[] error = FileBrowser.Result;
-                string errorString = string.Join(", ", error);
-                Debug.Log("Error: " + errorString);
-                TriggerPopup("Error: " + errorString, "Error", "xmark");
+                try
+                {
+                    string[] error = FileBrowser.Result;
+                    string errorString = string.Join(", ", error);
+                    Debug.Log("Error: " + errorString);
+                    TriggerPopup("Error: " + errorString, "Error", "xmark");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log("Error: " + e.Message);
+                }
+                
 
             }
             _explorerActive = false;
@@ -388,7 +422,7 @@ namespace SpatialNotes
                 string destFile = System.IO.Path.Combine(destinationPath, fileName);
                 System.IO.File.Copy(file, destFile, true);
             }
-            
+
 
             // Refresh the map select panel
             RefreshMapSelectPanel();

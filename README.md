@@ -53,3 +53,24 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 [issues-url]: https://github.com/Rexwang8/spatialnotes/issues
 [license-shield]: https://img.shields.io/github/license/Rexwang8/spatialnotes.svg?style=for-the-badge
 [license-url]: https://github.com/Rexwang8/spatialnotes/blob/master/LICENSE.txt
+
+
+## Internal Event Spec
+
+SpatialNotes uses simple event manager to coordinate events in the program. This following spec details events used when contributing
+
+CURSOR_NAME - Data(STRING) - NORMAL, QUESTION, DRAG, EXIT, CIRCLE
+
+CURSOR_REFRESH - Event - Refreshes cursor
+
+MODEL_POPUP_TITLE - Data(STRING) - Title of popup
+
+MODEL_POPUP - Data(STRING) - Description of popup
+
+MODEL_POPUP_IMAGE - Data(STRING) - Name of image to show
+
+MODEL_POPUP - Event - Creates a popup event.
+
+MAP_TO_LOAD- Data(STRING) - Name of map to load from files.
+
+LOAD_MAP - Event - Loads map from files.
