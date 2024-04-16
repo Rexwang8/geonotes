@@ -15,13 +15,16 @@ Spatial notes is a notetaking windows desktop application which attempts to have
 
 ## Installation
 
-You can install spatial notes by downloading the executable from the pre-built zips.
+1. Go to our Release and download the latest version of Spatial Notes
+2. If you haven't, install [Unity](https://unity.com/download) 
 
 ---
 
 ## Building
 
-You can build SpatialNotes by cloning the repo, opening the project in Unity and building with Unity's build tools.
+1. Make sure you clone our [repository](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax) in your system
+2. Now run the executable and enjoy spatial notes!
+
 
 ---
 
