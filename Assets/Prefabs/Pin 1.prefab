@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1273872292720851929}
   - component: {fileID: 7715447176644050354}
   - component: {fileID: 5465621941685364963}
+  - component: {fileID: 1955077496970185826}
   m_Layer: 5
   m_Name: Pin 1
   m_TagString: Untagged
@@ -76,6 +77,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1955077496970185826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5692445505085677572}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfb1012948076ef4dbab355285f4805a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  locationInfo:
+    locationName: 
+    description: 
+    coordinate: {x: 0, y: 0, z: 0}
 --- !u!1 &7061342130765873918
 GameObject:
   m_ObjectHideFlags: 0
