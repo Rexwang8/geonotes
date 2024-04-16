@@ -67,8 +67,10 @@ namespace SpatialNotes
 
                 button.transform.localScale = new Vector3(1, 1, 1);
                 button.gameObject.name = "Button " + i;
+
                 button.transform.localPosition = new Vector3(0, 0, 0);
                 button.transform.localPosition = new Vector3(400, 925 + (-i * 1.20f * button.GetComponent<RectTransform>().rect.height), 0);
+                
                 TMP_Text buttonText = button.GetComponentInChildren<TMP_Text>();
                 string buttonTextString = items[i];
                 //capitalize first letter
@@ -91,10 +93,8 @@ namespace SpatialNotes
                     texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
                     UnityEngine.UI.Image buttonImg = button.transform.Find("Image").GetComponent<UnityEngine.UI.Image>();
                     buttonImg.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-
                 }
 
-            
             }
 
             //update viewport size based on number of items
@@ -264,9 +264,6 @@ namespace SpatialNotes
             };
 
         }
-
-
-
 
         // Coroutine to show the load file dialog
         IEnumerator ShowLoadDialogCoroutineFoldersOnly()
