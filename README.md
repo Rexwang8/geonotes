@@ -15,8 +15,8 @@ Spatial notes is a notetaking windows desktop application which attempts to have
 
 ## Installation
 
-1. Go to our Release and download the latest version of Spatial Notes
-2. If you haven't, install [Unity](https://unity.com/download) 
+1. Go to our Release and download the latest version of [Spatial Notes](https://github.com/Rexwang8/spatialnotes/releases/tag/0.0.2)
+
 
 ---
 
