@@ -21,7 +21,7 @@ You can install spatial notes by downloading the executable from the pre-built z
 
 ## Building
 
-You can build SpatialNotes by cloning the repo, openning the project in Unity and building with Unity's build tools.
+You can build SpatialNotes by cloning the repo, opening the project in Unity and building with Unity's build tools.
 
 ---
 
