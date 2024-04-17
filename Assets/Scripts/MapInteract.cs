@@ -33,7 +33,7 @@ namespace SpatialNotes
         private GameObject mapImageZoom;
         private Vector3 savedUiPosOnClick;
 
-        private GameObject zoomScrollBar;
+        public GameObject zoomScrollBar;
         private GameObject staticCanvas;
 
         public float ZoomLevel = 1.0f;
