@@ -443,8 +443,8 @@ namespace SpatialNotes
             Vector3 coord = _getWorldClickPosition(lastSelectedLocation);
 
             //Set text to the location
-            TextMeshProUGUI locationText = emptySideMenuNoSelection.transform.Find("LocationText").GetComponent<TextMeshProUGUI>();
-            locationText.text = "Location: (" + coord.x + ", " + coord.y + ")";
+            TextMeshProUGUI locationText = emptySideMenuNoSelection.transform.Find("Coordinates").GetComponent<TextMeshProUGUI>();
+            locationText.text = "(" + coord.x + ", " + coord.y + ")";
             TextMeshProUGUI DescriptionText = emptySideMenuNoSelection.transform.Find("DescriptionText").GetComponent<TextMeshProUGUI>();
             DescriptionText.text = "Description: ";
 
@@ -472,10 +472,11 @@ namespace SpatialNotes
             //Set text to the location
             LocationInfo locInfo = locationPin.GetComponent<PinID>().locationInfo;
             TextMeshProUGUI locationText = sideMenuShowLocation.transform.Find("LocationText").GetComponent<TextMeshProUGUI>();
-            locationText.text = "Location: " + locInfo.locationName;
+            locationText.text = locInfo.locationName;
+            TextMeshProUGUI CoordinatesText = sideMenuShowLocation.transform.Find("CoordinateText").GetComponent<TextMeshProUGUI>();
+            CoordinatesText.text = "Coordinates: (" + locInfo.coordinate.x + ", " + locInfo.coordinate.y + ")";
             TextMeshProUGUI DescriptionText = sideMenuShowLocation.transform.Find("DescriptionText").GetComponent<TextMeshProUGUI>();
-            DescriptionText.text = "Coordinates: (" + locInfo.coordinate.x + ", " + locInfo.coordinate.y + ")";
-            DescriptionText.text += "\nDescription: " + locInfo.description;
+            DescriptionText.text = "Description: " + locInfo.description;
 
             sideMenuShowLocation.SetActive(true);
         }
