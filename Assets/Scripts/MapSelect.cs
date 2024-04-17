@@ -71,7 +71,6 @@ namespace SpatialNotes
                 //generic tmp button
                 GameObject button = Instantiate(buttonPrefab) as GameObject;
 
-                button.gameObject.name = "Button " + i;
                 
                 TMP_Text buttonText = button.GetComponentInChildren<TMP_Text>();
                 string buttonTextString = items[i];
@@ -82,10 +81,10 @@ namespace SpatialNotes
                     buttonTextString = buttonTextString.Substring(0, 20) + "...";
                 }
                 buttonText.text = buttonTextString;
-                buttonText.fontSize = 18;
+                buttonText.fontSize = 20;
                 button.GetComponent<Button>().onClick.AddListener(ButtonFunction);
                 button.transform.SetParent(_contentScrollView.transform);
-                button.transform.localScale = new Vector3(1, 1, 1);
+                button.transform.localScale = new Vector3(1.50f, 1.25f, 1.25f);
                 button.transform.localPosition = new Vector3(250, (-i * 1.5f * buttonPrefab.GetComponent<RectTransform>().rect.height) - 100, 0);
 
                 // Add image to button
@@ -97,7 +96,6 @@ namespace SpatialNotes
                     texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
                     UnityEngine.UI.Image buttonImg = button.transform.Find("Image").GetComponent<UnityEngine.UI.Image>();
                     buttonImg.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-
                 }
 
 
