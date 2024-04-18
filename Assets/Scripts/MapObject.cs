@@ -30,6 +30,7 @@ namespace SpatialNotes
         public string locationJsonPath; // Path to the notes folder
         public string mapJsonPath; // Path to the map folder
         public string mapDirPath; // Path to the map folder
+        public string mapAssetsPath; // Path to the map assets folder
 
 
 
@@ -45,6 +46,7 @@ namespace SpatialNotes
             public string locationJsonPath; // Path to the notes folder
             public string mapDirPath; // Path to the map folder
             public string mapJsonPath; // Path to the map folder
+            public string mapAssetsPath; // Path to the map assets folder
         }
 
         public string SerializeToJson()
@@ -59,6 +61,7 @@ namespace SpatialNotes
             data.locationJsonPath = locationJsonPath;
             data.mapDirPath = mapDirPath;
             data.mapJsonPath = mapJsonPath;
+            data.mapAssetsPath = mapDirPath + "/assets";
 
             return JsonUtility.ToJson(data);
         }
@@ -300,7 +303,7 @@ namespace SpatialNotes
         }
 
         //Add postcard to the List
-        public void AddLocation(string locCoord, string locName, string locDescription)
+        public void AddLocation(string locCoord, string locName, string locDescription, string locImagePath="")
         {
             if (locationDict.ContainsKey(locCoord))
             {
@@ -309,15 +312,15 @@ namespace SpatialNotes
             }
             else
             {
-                LocationInfo newLocation = new LocationInfo(locName, locDescription, new Vector3(0, 0, 0));
+                LocationInfo newLocation = new LocationInfo(locName, locDescription, new Vector3(0, 0, 0), locImagePath);
                 locationDict.Add(locCoord, newLocation);
             }
         }
         // Add location to the map (vec3 overload)
-        public void AddLocation(Vector3 locCoord, string locName, string locDescription)
+        public void AddLocation(Vector3 locCoord, string locName, string locDescription, string locImagePath="")
         {
             string locCoordStr = locCoord.x + "," + locCoord.y + "," + locCoord.z;
-            AddLocation(locCoordStr, locName, locDescription);
+            AddLocation(locCoordStr, locName, locDescription, locImagePath);
         }
 
         // Add location to map (locationinfo overload)
@@ -423,17 +426,18 @@ namespace SpatialNotes
             locationJsonPath = "/Maps/" + nameOfMapLowerCaseStripped + "/notes/location.json";
             mapJsonPath = "/Maps/" + nameOfMapLowerCaseStripped + "/" + nameOfMapLowerCaseStripped + ".json";
             mapDirPath = "/Maps/" + nameOfMapLowerCaseStripped;
+            mapAssetsPath = "/Maps/" + nameOfMapLowerCaseStripped + "/assets";
 
             // Load notes and locations from JSON
             json = System.IO.File.ReadAllText(Application.streamingAssetsPath + notesJsonPath);
             notesDict = JsonUtility.FromJson<SerializableDictionary<string, JsonableListWrapper<PostCard>>>(json);
             json = System.IO.File.ReadAllText(Application.streamingAssetsPath + locationJsonPath);
             locationDict = JsonUtility.FromJson<SerializableDictionary<string, LocationInfo>>(json);
-            Debug.Log(notesDict);
-            Debug.Log(locationDict);
-            Debug.Log("number of notes: " + GetNumberOfNotes());
-            Debug.Log("number of locations: " + GetNumberOfLocations());
-            Debug.Log("map name: " + name);
+            //Debug.Log(notesDict);
+            //Debug.Log(locationDict);
+            //Debug.Log("number of notes: " + GetNumberOfNotes());
+            //Debug.Log("number of locations: " + GetNumberOfLocations());
+            //Debug.Log("map name: " + name);
         }
 
 

@@ -60,7 +60,6 @@ namespace SpatialNotes
         void DrawThresholdCircle(Color color, float radius, int thickness = 2)
         {
             //draw a hollow red circle around the cursor
-            Debug.Log("Drawing Circle");
             Vector2 cursorPos = Input.mousePosition;
             Texture2D tex = new Texture2D((int)radius * 2, (int)radius * 2);
             for (int x = 0; x < tex.width; x++)

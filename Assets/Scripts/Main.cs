@@ -65,6 +65,16 @@ public class Main : MonoBehaviour
         GameObject mapBackground = mapCanvas.transform.Find("MapImage").GetChild(0).gameObject; //get background
         mapBackground.GetComponent<UnityEngine.UI.Image>().color = backgroundColor;
 
+        //if size of map is smaller than 75% of the screen size, scale it up
+        float scale = 1.0f;
+        float amtScaledToScreen = 0.75f;
+        while (tex.width * scale < amtScaledToScreen * screenWidth && tex.height * scale < amtScaledToScreen * screenHeight) {
+            scale += 0.01f;
+        }
+        mapImage.transform.localScale = new Vector3(scale, scale, 1);
+        GameObject EverythingElse = GameObject.Find("EverythingElseScaled");
+        EverythingElse.transform.localScale = new Vector3(scale, scale, 1);
+        
         
 
 
