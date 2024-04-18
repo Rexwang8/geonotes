@@ -4713,6 +4713,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8500985af1cefdd4cbc8bc1c2685887a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  customLeftClickCursor: {fileID: 2800000, guid: fee23eb8e5d9ba84ab01910b874b4b30, type: 3}
+  Default: {fileID: 2800000, guid: 2e71a8202d3b4a3448ec85ced5a40265, type: 3}
+  RightClick: {fileID: 2800000, guid: 2a2b4775272c890448e1bd6239fdfc84, type: 3}
   emptySideMenuNoSelection: {fileID: 0}
   sideMenuCreateLocation: {fileID: 0}
   pinsFolder: {fileID: 341286762}
@@ -4728,6 +4731,7 @@ MonoBehaviour:
   minZoom: 0
   zoomSpeed: 2.25
   panSpeed: 1.75
+  isSideMenuOpen: 0
 --- !u!4 &872695254
 Transform:
   m_ObjectHideFlags: 0
@@ -7224,60 +7228,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1488459140}
   m_CullTransparentMesh: 1
---- !u!1 &1527029972
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1527029974}
-  - component: {fileID: 1527029975}
-  m_Layer: 5
-  m_Name: Cursor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1527029974
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1527029972}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 800, y: 450}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1527029975
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1527029972}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6df636798c5704fb1840fa9976109d5b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cursorNormal: {fileID: 2800000, guid: 2e71a8202d3b4a3448ec85ced5a40265, type: 3}
-  cursorQuestionMark: {fileID: 0}
-  cursorDrag: {fileID: 0}
-  cursorExit: {fileID: 0}
-  customLeftClickCursor: {fileID: 2800000, guid: 8859fce41c5d0a148ad0b7eebfca7fe9, type: 3}
-  customRightClickCursor: {fileID: 2800000, guid: 21628736160fcc9488493401da3ef621, type: 3}
 --- !u!1 &1557950402
 GameObject:
   m_ObjectHideFlags: 0
@@ -10811,4 +10761,3 @@ SceneRoots:
   - {fileID: 1163380119}
   - {fileID: 1557950406}
   - {fileID: 734837783}
-  - {fileID: 1527029974}

@@ -12,6 +12,10 @@ namespace SpatialNotes
     public class MapInteract : MonoBehaviour
     {
         private GameObject sideMenuNoSelectAddLocButton;
+        public Texture2D customLeftClickCursor;
+        public Texture2D Default;
+
+        public Texture2D RightClick;
         private GameObject sideMenu;
         [SerializeField]
         private GameObject emptySideMenuNoSelection;
@@ -44,6 +48,8 @@ namespace SpatialNotes
         public float minZoom = 0.0f;
         public float zoomSpeed = 2.0f;
         public float panSpeed = 1.3f;
+
+        public bool isSideMenuOpen = false;
 
         private enum mouseButton { Left, Right, Middle };
         
@@ -103,6 +109,7 @@ namespace SpatialNotes
 
             _removeAllPins(pinsFolder);
             _hideSideMenu();
+            isSideMenuOpen = false;
 
             //load locations
             OnStartLoadLocations();
@@ -134,17 +141,25 @@ namespace SpatialNotes
                 _debugShowNearbyPinsToClick(worldClickPos);
                 EventManager.SetData("CURSOR_NAME", "CIRCLE");
                 EventManager.EmitEvent("CURSOR_REFRESH");
+                if (isSideMenuOpen == false)
+                {
+                    Cursor.SetCursor(RightClick, Vector2.zero, CursorMode.Auto);
+                }
+                
                 
                 
 
                 GameObject clickedPin = checkIfLocationPinClicked(worldClickPos);
                 if (clickedPin != null)
                 {
+                    isSideMenuOpen = true;
                     Debug.Log("Clicked on location pin: " + clickedPin.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text);
                     _showSideMenuShowLocation(clickedPin);
                 }
                 else
                 {
+                    isSideMenuOpen = true;
+
                     Debug.Log("Clicked on empty space");
                     
                     GameObject pin = Instantiate(pinPrefab, new Vector3(worldClickPos.x, worldClickPos.y, 1), Quaternion.identity);
@@ -164,11 +179,18 @@ namespace SpatialNotes
                 }
             }
 
+            if (Input.GetMouseButtonUp((int)mouseButton.Right) || Input.GetMouseButtonUp((int)mouseButton.Left))
+            {
+                Cursor.SetCursor(Default, Vector2.zero, CursorMode.Auto);
+            }
+
             // middle mouse or esc button
             if (Input.GetMouseButtonDown((int)mouseButton.Middle) || Input.GetKeyDown(KeyCode.Escape))
             {
                 _removeAllPins(pinsFolder);
                 _hideSideMenu();
+                isSideMenuOpen = false;
+                Cursor.SetCursor(customLeftClickCursor, Vector2.zero, CursorMode.Auto);
                 EventManager.SetData("CURSOR_NAME", "NORMAL");
                 EventManager.EmitEvent("CURSOR_REFRESH");
                 Debug.Log("Middle Mouse Button Clicked");
@@ -188,12 +210,18 @@ namespace SpatialNotes
             else if (Input.GetMouseButtonUp((int)mouseButton.Left))
             {
                 dragging = false;
+                Cursor.SetCursor(Default, Vector2.zero, CursorMode.Auto);
                 return;
             }
             
             // Dragging
             if (dragging)
             {
+                if (isSideMenuOpen == false)
+                {
+                    Cursor.SetCursor(customLeftClickCursor, Vector2.zero, CursorMode.Auto);
+                }
+                
                 Vector3 pos = Camera.main.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
                 float zoomAdjustedPanSpeed = Mathf.Clamp((float)(panSpeed * (1 - currentZoom / maxZoom)), 0.15f * panSpeed, 2.0f * panSpeed);
                 //Debug.Log("Pan Speed: " + zoomAdjustedPanSpeed + " " + panSpeed + " " + maxZoom + " " + currentZoom + " " + (maxZoom - currentZoom / maxZoom));
@@ -278,10 +306,12 @@ namespace SpatialNotes
 
             //Close the add location canvas
             _hideSideMenu();
+            isSideMenuOpen = false;
         }
         public void LocationCancel()
         {
             _hideSideMenu();
+            isSideMenuOpen = false;
         }
 
         private bool _getSideMenUIsActive()
@@ -465,6 +495,7 @@ namespace SpatialNotes
         private void _showSideMenuCreateLocation()
         {
             _showSideMenuEmpty();
+            
             sideMenuCreateLocation.SetActive(true);
         }
 
