@@ -5,6 +5,9 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TigerForge;
 using TMPro;
+using SimpleFileBrowser;
+using System.Linq;
+using System.IO;
 
 namespace SpatialNotes
 {
@@ -23,6 +26,7 @@ namespace SpatialNotes
         private GameObject sideMenuCreateLocationButtonCancel;
         private GameObject sideMenuCreateLocationNameField;
         private GameObject sideMenuCreateLocationDescriptionField;
+        private GameObject sideMenuCreateLocationIsImageSelected;
         public GameObject pinsFolder;
         public GameObject locationPinsFolder;
         public GameObject pinPrefab;
@@ -45,8 +49,17 @@ namespace SpatialNotes
         public float zoomSpeed = 2.0f;
         public float panSpeed = 1.3f;
 
+        private bool _explorerActive = false;
+
+        private GameObject _imageToCreateWith;
+        private string _pathToImageBeingCreated = "";
+
+        // Default path to open file explorer
+        private string _defaultPath;
+        private string[] _foundPaths;
+
         private enum mouseButton { Left, Right, Middle };
-        
+
         //Variables needed for drag
         private Vector3 dragOrigin;
         private Vector3 worldSpaceOrigin;
@@ -55,6 +68,9 @@ namespace SpatialNotes
 
         private Vector3 lastSelectedLocation;
         private Vector3 lastCandidateUiPos;
+
+        //placeholder image for location if none
+        public Sprite placeholderImage;
 
         void Start()
         {
@@ -86,20 +102,23 @@ namespace SpatialNotes
             sideMenuShowLocation = sideMenu.transform.Find("SideMenuExistingLocation").gameObject;
             //get content child inside viewport of scroll view of sidemenushowlocation
             sideMenuShowLocationContent = sideMenuShowLocation.transform.Find("Scroll View").transform.Find("Viewport").transform.Find("Content").gameObject;
-            
+
 
             // Get the location button
             sideMenuCreateLocationButtonAdd = sideMenuCreateLocation.transform.Find("Add").gameObject;
             sideMenuCreateLocationButtonCancel = sideMenuCreateLocation.transform.Find("Cancel").gameObject;
             sideMenuCreateLocationDescriptionField = sideMenuCreateLocation.transform.Find("Description").gameObject;
             sideMenuCreateLocationNameField = sideMenuCreateLocation.transform.Find("Name").gameObject;
+            sideMenuCreateLocationIsImageSelected = sideMenuCreateLocation.transform.Find("IsImage").gameObject;
+            _imageToCreateWith = sideMenuCreateLocation.transform.Find("DisplayIMG").gameObject;
             sideMenuNoSelectAddLocButton = emptySideMenuNoSelection.transform.Find("AddLocButton").gameObject;
-            
+            _imageToCreateWith.SetActive(false);
+
             // Add button listeners
             sideMenuCreateLocationButtonAdd.GetComponent<Button>().onClick.AddListener(LocationAdd);
             sideMenuCreateLocationButtonCancel.GetComponent<Button>().onClick.AddListener(LocationCancel);
             sideMenuNoSelectAddLocButton.GetComponent<Button>().onClick.AddListener(_existingMenuAddLocButton);
-            
+
 
             _removeAllPins(pinsFolder);
             _hideSideMenu();
@@ -113,29 +132,32 @@ namespace SpatialNotes
         void Update()
         {
             //Handle zoom in and out WIP
-            if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward
+            if (!_explorerActive)
             {
-                _zoomIn();
-            }
-            else if (Input.GetAxis("Mouse ScrollWheel") < 0f) // backwards
-            {
-                _zoomOut();
+                if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward
+                {
+                    _zoomIn();
+                }
+                else if (Input.GetAxis("Mouse ScrollWheel") < 0f) // backwards
+                {
+                    _zoomOut();
+                }
             }
 
             // move right click menu to mouse position
             if (Input.GetMouseButtonDown((int)mouseButton.Right))
             {
-                
+
                 _removeAllPins(pinsFolder);
                 //Instantiate Pin
                 lastCandidateUiPos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0);
                 lastSelectedLocation = lastCandidateUiPos;
                 Vector3 worldClickPos = _getWorldClickPosition(lastSelectedLocation);
-                _debugShowNearbyPinsToClick(worldClickPos);
+                //_debugShowNearbyPinsToClick(worldClickPos);
                 EventManager.SetData("CURSOR_NAME", "CIRCLE");
                 EventManager.EmitEvent("CURSOR_REFRESH");
-                
-                
+
+
 
                 GameObject clickedPin = checkIfLocationPinClicked(worldClickPos);
                 if (clickedPin != null)
@@ -146,7 +168,7 @@ namespace SpatialNotes
                 else
                 {
                     Debug.Log("Clicked on empty space");
-                    
+
                     GameObject pin = Instantiate(pinPrefab, new Vector3(worldClickPos.x, worldClickPos.y, 1), Quaternion.identity);
                     pin.transform.SetParent(pinsFolder.transform);
                     //pin.transform.position = new Vector3(worldClickPos.x, worldClickPos.y, 1);
@@ -156,7 +178,7 @@ namespace SpatialNotes
 
                     //populate pinID
                     PinID id = pin.GetComponent<PinID>();
-                    id.locationInfo = new LocationInfo("Selected Location", "Selected Location", worldClickPos);
+                    id.locationInfo = new LocationInfo("Selected Location", "Selected Location", worldClickPos, "");
                     id.type = "Selected";
 
                     _HideAllSideMenuBranches();
@@ -173,7 +195,7 @@ namespace SpatialNotes
                 EventManager.EmitEvent("CURSOR_REFRESH");
                 Debug.Log("Middle Mouse Button Clicked");
             }
-            
+
 
             // Left Click Drag
             if (Input.GetMouseButtonDown((int)mouseButton.Left))
@@ -184,16 +206,23 @@ namespace SpatialNotes
                 EventManager.SetData("CURSOR_NAME", "NORMAL");
                 EventManager.EmitEvent("CURSOR_REFRESH");
                 return;
-            } 
+            }
             else if (Input.GetMouseButtonUp((int)mouseButton.Left))
             {
                 dragging = false;
                 return;
             }
-            
+
             // Dragging
-            if (dragging)
+            if (dragging && !_explorerActive)
             {
+                //change cursor if not already changed
+                if (EventManager.GetString("CURSOR_NAME") != "DRAG")
+                {
+                    EventManager.SetData("CURSOR_NAME", "DRAG");
+                    EventManager.EmitEvent("CURSOR_REFRESH");
+                }
+
                 Vector3 pos = Camera.main.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
                 float zoomAdjustedPanSpeed = Mathf.Clamp((float)(panSpeed * (1 - currentZoom / maxZoom)), 0.15f * panSpeed, 2.0f * panSpeed);
                 //Debug.Log("Pan Speed: " + zoomAdjustedPanSpeed + " " + panSpeed + " " + maxZoom + " " + currentZoom + " " + (maxZoom - currentZoom / maxZoom));
@@ -202,6 +231,14 @@ namespace SpatialNotes
                 {
                     dragChange = move;
                     cam.transform.position = worldSpaceOrigin - move;
+                }
+            }
+            else
+            {
+                if (EventManager.GetString("CURSOR_NAME") == "DRAG")
+                {
+                    EventManager.SetData("CURSOR_NAME", "NORMAL");
+                    EventManager.EmitEvent("CURSOR_REFRESH");
                 }
             }
         }
@@ -225,15 +262,17 @@ namespace SpatialNotes
                 pinName.GetComponent<TextMeshProUGUI>().text = loc.Value.locationName;
 
                 //populate pinID
+                loc.Value.coordinate = coord;
                 PinID id = pin.GetComponent<PinID>();
                 id.locationInfo = loc.Value;
                 id.type = "Location";
+                Debug.Log("Location info: " + loc.Value.locationName + " " + loc.Value.description + " " + loc.Value.coordinate + " " + loc.Value.imagePath);
 
                 //pins of locations are green
                 pin.GetComponent<Image>().color = Color.green;
 
             }
-            
+
         }
 
         private void _existingMenuAddLocButton()
@@ -241,16 +280,156 @@ namespace SpatialNotes
             _showSideMenuCreateLocation();
         }
 
+        // upload image from file explorer for location
+        public void OnClickUploadImage()
+        {
+            _openFileExplorerToLoadImages();
+        }
+
+        // Helper to open the file explorer to pick only images
+        private void _openFileExplorerToLoadImages()
+        {
+            if (_explorerActive)
+            {
+                Debug.Log("Explorer already active");
+                TriggerPopup("Explorer already active", "Explorer Active", "xmark");
+                return;
+            }
+            //open in maps directory, if it exists, else create it
+            string path = Application.streamingAssetsPath + "/Maps";
+            if (!System.IO.Directory.Exists(path))
+            {
+                System.IO.Directory.CreateDirectory(path);
+            }
+
+            _setFileBrowserFilterImagesOnly();
+
+            // Show a save file dialog, await response from dialog
+            StartCoroutine(ShowLoadDialogCoroutineImagesOnly());
+
+            return;
+        }
+
+        // Filter for only images
+        private void _setFileBrowserFilterImagesOnly()
+        {
+            //only allow directories to be selected
+            FileBrowser.DisplayedEntriesFilter += (entry) =>
+            {
+                if (entry.IsDirectory)
+                    return true; // Don't filter folders
+
+
+                string extension = Path.GetExtension(entry.Path).ToLower();
+                if (extension == ".png" || extension == ".jpg" || extension == ".jpeg" || extension == ".bmp" || extension == ".tiff")
+                {
+                    return true;
+                }
+
+
+                return false; // Filter files
+            };
+
+        }
+
+        // Coroutine to show the load file dialog for images
+        IEnumerator ShowLoadDialogCoroutineImagesOnly()
+        {
+            _explorerActive = true;
+            // Directories only
+            yield return FileBrowser.WaitForLoadDialog(SimpleFileBrowser.FileBrowser.PickMode.Files, true, _defaultPath, null, "Select Map Folder", "Load");
+            Debug.Log(FileBrowser.Success + " " + FileBrowser.Result);
+            if (FileBrowser.Success)
+            {
+                OnFolderSelectedLoadFileImages(FileBrowser.Result);
+            }
+            else
+            {
+                _explorerActive = false;
+                try
+                {
+                    string[] error = FileBrowser.Result;
+                    string errorString = string.Join(", ", error);
+                    Debug.Log("Error: " + errorString);
+                    TriggerPopup("Error: " + errorString, "Error", "xmark");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log("Error: " + e.Message);
+
+                }
+            }
+            _explorerActive = false;
+        }
+
+        // Logs the paths of the selected files
+        void OnFolderSelectedLoadFileImages(string[] paths)
+        {
+            if (paths.Length == 0)
+            {
+                Debug.Log("No files were selected");
+                TriggerPopup("No files were selected", "No Files Selected", "xmark");
+                return;
+            }
+            foreach (string path in paths)
+            {
+                Debug.Log("Selected file: " + path);
+            }
+
+            // select only one 
+            string selectedPath = paths[0];
+
+            //Try to load the image
+            Texture2D texture = new Texture2D(2, 2);
+            byte[] fileData;
+            if (File.Exists(selectedPath))
+            {
+                fileData = File.ReadAllBytes(selectedPath);
+                texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                _imageToCreateWith.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                _pathToImageBeingCreated = selectedPath;
+            }
+            else
+            {
+                Debug.Log("File does not exist: " + selectedPath);
+                TriggerPopup("File does not exist: " + selectedPath, "File Not Found", "xmark");
+                _explorerActive = false;
+                return;
+            }
+
+            // show image and hide placeholder
+            _imageToCreateWith.SetActive(true);
+            sideMenuCreateLocationIsImageSelected.SetActive(false);
+
+            //move image file to map directory and change path to new path
+            string newImagePath = Application.streamingAssetsPath + map.mapAssetsPath + Path.GetFileName(selectedPath);
+            File.Copy(selectedPath, newImagePath, true);
+            _pathToImageBeingCreated = newImagePath;
+
+
+            // Trigger popup
+            TriggerPopup(text: "Image " + Path.GetFileName(selectedPath) + " loaded", title: "Image Loaded", imageName: "checkmark");
+
+        }
+
 
         public void LocationAdd()
         {
             Debug.Log("Location Added");
             Vector3 coord = _getWorldClickPosition(lastSelectedLocation);
-            string locationName = sideMenuCreateLocationNameField.GetComponent<InputField>().text;
-            string locationDescription = sideMenuCreateLocationDescriptionField.GetComponent<InputField>().text;
+            string locationName = sideMenuCreateLocationNameField.GetComponent<TMP_InputField>().text;
+            string locationDescription = sideMenuCreateLocationDescriptionField.GetComponent<TMP_InputField>().text;
             Debug.Log(savedUiPosOnClick + " " + coord + " " + locationName + " " + locationDescription);
+
+            string locationImagePath = "";
+            if (_pathToImageBeingCreated != "")
+            {
+                locationImagePath = _pathToImageBeingCreated;
+            }
+            Debug.Log("Location Image Path: " + locationImagePath);
+            //
             //Add location to the database
-            map.AddLocation(locCoord: coord, locName: locationName, locDescription: locationDescription);
+            map.AddLocation(locCoord: coord, locName: locationName, locDescription: locationDescription, locImagePath: locationImagePath);
             Debug.Log("Location Added to the database, new location count: " + map.GetNumberOfLocations());
 
             //add pin to the map
@@ -262,7 +441,7 @@ namespace SpatialNotes
 
             //populate pinID
             PinID id = pin.GetComponent<PinID>();
-            id.locationInfo = new LocationInfo(locationName, locationDescription, coord);
+            id.locationInfo = new LocationInfo(locationName, locationDescription, coord, locationImagePath);
             id.type = "Location";
 
             //pins of locations are green
@@ -272,8 +451,15 @@ namespace SpatialNotes
             map.SaveAll();
 
             //clear the fields for the next location
-            sideMenuCreateLocationNameField.GetComponent<InputField>().text = "";
-            sideMenuCreateLocationDescriptionField.GetComponent<InputField>().text = "";
+            sideMenuCreateLocationNameField.GetComponent<TMP_InputField>().text = "";
+            sideMenuCreateLocationDescriptionField.GetComponent<TMP_InputField>().text = "";
+            _pathToImageBeingCreated = "";
+            //hide the image
+            _imageToCreateWith.SetActive(false);
+            sideMenuCreateLocationIsImageSelected.SetActive(true);
+
+            //remove temporary pins
+            _removeAllPins(pinsFolder);
 
 
             //Close the add location canvas
@@ -282,6 +468,13 @@ namespace SpatialNotes
         public void LocationCancel()
         {
             _hideSideMenu();
+
+            //clear the fields for the next location
+            sideMenuCreateLocationNameField.GetComponent<TMP_InputField>().text = "";
+            sideMenuCreateLocationDescriptionField.GetComponent<TMP_InputField>().text = "";
+            _pathToImageBeingCreated = "";
+            _imageToCreateWith.SetActive(false);
+            sideMenuCreateLocationIsImageSelected.SetActive(true);
         }
 
         private bool _getSideMenUIsActive()
@@ -372,7 +565,7 @@ namespace SpatialNotes
                 Debug.Log("Closest pin to click is: " + closestPin.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text);
             }
 
-            
+
         }
 
         private void _zoomIn()
@@ -385,7 +578,7 @@ namespace SpatialNotes
                 return;
             }
             currentZoom += _zoomAmt;
-            
+
             zoomScrollBar.GetComponent<Scrollbar>().value = currentZoom / maxZoom;
 
             cam.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, cam.transform.position.z + _zoomAmt);
@@ -471,7 +664,7 @@ namespace SpatialNotes
         private void _showSideMenuShowLocation(GameObject locationPin)
         {
             _showSideMenuEmpty();
-            
+
 
             //Set text to the location
             LocationInfo locInfo = locationPin.GetComponent<PinID>().locationInfo;
@@ -482,6 +675,29 @@ namespace SpatialNotes
             TextMeshProUGUI DescriptionText = sideMenuShowLocationContent.transform.Find("DescriptionText").GetComponent<TextMeshProUGUI>();
             DescriptionText.text = "Description: " + locInfo.description;
 
+            //show image if it exists else show placeholder
+            GameObject displayIMG = sideMenuShowLocationContent.transform.Find("LocationImage").gameObject;
+            if (locInfo.imagePath != "")
+            {
+                Texture2D texture = new Texture2D(2, 2);
+                byte[] fileData;
+                if (File.Exists(locInfo.imagePath))
+                {
+                    fileData = File.ReadAllBytes(locInfo.imagePath);
+                    texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                    displayIMG.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                }
+                else
+                {
+                    Debug.Log("File does not exist: " + locInfo.imagePath);
+                    TriggerPopup("File does not exist: " + locInfo.imagePath, "File Not Found", "xmark");
+                }
+            }
+            else
+            {
+                displayIMG.GetComponent<UnityEngine.UI.Image>().sprite = placeholderImage;
+            }
+
             sideMenuShowLocation.SetActive(true);
         }
         private void _hideSideMenuShowLocation()
@@ -490,57 +706,57 @@ namespace SpatialNotes
         }
 
 
+        /*
+
+                private Vector3 _convertMousePos2Coord(Vector2 mousePos)
+                {
+                    //Get data
+                    Vector4 visibleDims = _calcVisibleImageDims();
+                    Vector2 centerPoint = _calcCenterpoint(visibleDims);
+                    Vector2 visibleSize = _calcVisibleSize(visibleDims);
+
+                    // add the visible dims to the mouse pos
+                    Vector2 mousePosPercentage = new Vector2(mousePos.x / Screen.width, mousePos.y / Screen.height);
+                    Vector2 mousePosAddVisSize = new Vector2(mousePosPercentage.x * visibleSize.x, mousePosPercentage.y * visibleSize.y);
+                    Vector2 mousePosAddVisDims = new Vector2(mousePosAddVisSize.x + visibleDims.x, mousePosAddVisSize.y + visibleDims.y);
+                    // convert the mouse pos to a percentage of the Actual dims
+                    Vector2 coord = new Vector2(mousePosAddVisDims.x / 16, mousePosAddVisDims.y / 9);
+
+                    // round to 3 decimal places
+                    coord.x = Mathf.Round(coord.x * 1000) / 1000;
+                    coord.y = Mathf.Round(coord.y * 1000) / 1000;
+
+                    //clamp to 0-100
+                    coord.x = Mathf.Clamp(coord.x, 0, 100);
+                    coord.y = Mathf.Clamp(coord.y, 0, 100);
+                    return coord;
+                }
+
+                private Vector3 _convertCoord2MousePos(Vector3 coord)
+                {
+                    //Get data
+                    Vector4 visibleDims = _calcVisibleImageDims();
+                    Vector2 centerPoint = _calcCenterpoint(visibleDims);
+                    Vector2 visibleSize = _calcVisibleSize(visibleDims);
+
+                    Vector2 coordActualLocation = new Vector2(coord.x * 16, coord.y * 9);
+                    Vector2 coordSubVisDims = new Vector2(coordActualLocation.x - visibleDims.x, coordActualLocation.y - visibleDims.y);
+                    Vector2 coordSubVisDimsPercentage = new Vector2(coordSubVisDims.x / visibleSize.x, coordSubVisDims.y / visibleSize.y);
+
+                    // convert to mouse pos
+                    Vector2 mousePos = new Vector2(coordSubVisDimsPercentage.x * Screen.width, coordSubVisDimsPercentage.y * Screen.height);
+
+                    // round to 2 decimal places
+                    mousePos.x = Mathf.Round(mousePos.x * 1000) / 1000;
+                    mousePos.y = Mathf.Round(mousePos.y * 1000) / 1000;
+
+                    //clamp to 0-screen width/height
+                    mousePos.x = Mathf.Clamp(mousePos.x, 0, Screen.width);
+                    mousePos.y = Mathf.Clamp(mousePos.y, 0, Screen.height);
 
 
-        private Vector3 _convertMousePos2Coord(Vector2 mousePos)
-        {
-            //Get data
-            Vector4 visibleDims = _calcVisibleImageDims();
-            Vector2 centerPoint = _calcCenterpoint(visibleDims);
-            Vector2 visibleSize = _calcVisibleSize(visibleDims);
-
-            // add the visible dims to the mouse pos
-            Vector2 mousePosPercentage = new Vector2(mousePos.x / Screen.width, mousePos.y / Screen.height);
-            Vector2 mousePosAddVisSize = new Vector2(mousePosPercentage.x * visibleSize.x, mousePosPercentage.y * visibleSize.y);
-            Vector2 mousePosAddVisDims = new Vector2(mousePosAddVisSize.x + visibleDims.x, mousePosAddVisSize.y + visibleDims.y);
-            // convert the mouse pos to a percentage of the Actual dims
-            Vector2 coord = new Vector2(mousePosAddVisDims.x / 16, mousePosAddVisDims.y / 9);
-
-            // round to 3 decimal places
-            coord.x = Mathf.Round(coord.x * 1000) / 1000;
-            coord.y = Mathf.Round(coord.y * 1000) / 1000;
-
-            //clamp to 0-100
-            coord.x = Mathf.Clamp(coord.x, 0, 100);
-            coord.y = Mathf.Clamp(coord.y, 0, 100);
-            return coord;
-        }
-
-        private Vector3 _convertCoord2MousePos(Vector3 coord)
-        {
-            //Get data
-            Vector4 visibleDims = _calcVisibleImageDims();
-            Vector2 centerPoint = _calcCenterpoint(visibleDims);
-            Vector2 visibleSize = _calcVisibleSize(visibleDims);
-
-            Vector2 coordActualLocation = new Vector2(coord.x * 16, coord.y * 9);
-            Vector2 coordSubVisDims = new Vector2(coordActualLocation.x - visibleDims.x, coordActualLocation.y - visibleDims.y);
-            Vector2 coordSubVisDimsPercentage = new Vector2(coordSubVisDims.x / visibleSize.x, coordSubVisDims.y / visibleSize.y);
-
-            // convert to mouse pos
-            Vector2 mousePos = new Vector2(coordSubVisDimsPercentage.x * Screen.width, coordSubVisDimsPercentage.y * Screen.height);
-
-            // round to 2 decimal places
-            mousePos.x = Mathf.Round(mousePos.x * 1000) / 1000;
-            mousePos.y = Mathf.Round(mousePos.y * 1000) / 1000;
-
-            //clamp to 0-screen width/height
-            mousePos.x = Mathf.Clamp(mousePos.x, 0, Screen.width);
-            mousePos.y = Mathf.Clamp(mousePos.y, 0, Screen.height);
-
-
-            return mousePos;
-        }
+                    return mousePos;
+                }*/
 
         private void _removeAllPins(GameObject folder)
         {

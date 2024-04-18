@@ -24,7 +24,7 @@ namespace SpatialNotesTest
         public void InstantiateLocationInfo()
         {
             // Create a new location info
-            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location", _description: "Test Description", _coordinate: new Vector3(0, 0, 0));
+            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location", _description: "Test Description", _coordinate: new Vector3(0, 0, 0), "");
             Assert.AreEqual(location.locationName, "Test Location");
             Debug.Log("Test Passed");
         }
@@ -53,7 +53,7 @@ namespace SpatialNotesTest
             note.DisplayContent();
             note.SaveDateTime();
             note.LoadDateTime();
-            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location 2", _description: "Test Description 2", _coordinate: new Vector3(0, 0, 0));
+            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location 2", _description: "Test Description 2", _coordinate: new Vector3(0, 0, 0), "");
             note.location = location;
             Assert.AreEqual(note.title, "Test Note 2");
             Assert.AreEqual(note.location.locationName, "Test Location 2");
@@ -100,7 +100,7 @@ namespace SpatialNotesTest
             string mapImagePath = Application.streamingAssetsPath + "/demomap.jpg";
             map3.CreateMap(_name: "ObjectCreationTest MapName 3", _TEMP_IMAGE_PATH: mapImagePath);
             // Create location and add 20 notes
-            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location 3", _description: "Test Description 3", _coordinate: new Vector3(1, 2, 3));
+            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location 3", _description: "Test Description 3", _coordinate: new Vector3(1, 2, 3), "");
             map3.AddLocation(location: location);
             for (int i = 0; i < 20; i++)
             {
@@ -127,7 +127,7 @@ namespace SpatialNotesTest
             string mapImagePath = Application.streamingAssetsPath + "/demomap.jpg";
             map4.CreateMap(_name: "ObjectCreationTest MapName 4", _TEMP_IMAGE_PATH: mapImagePath);
             // Create location and add 20 notes
-            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location 4", _description: "Test Description 4", _coordinate: new Vector3(1, 2, 3));
+            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location 4", _description: "Test Description 4", _coordinate: new Vector3(1, 2, 3), "");
             map4.AddLocation(location: location);
             for (int i = 0; i < 20; i++)
             {
@@ -151,7 +151,7 @@ namespace SpatialNotesTest
             string mapImagePath = Application.streamingAssetsPath + "/demomap.jpg";
             map5.CreateMap(_name: "ObjectCreationTest MapName 5", _TEMP_IMAGE_PATH: mapImagePath);
             // Create location and add 20 notes
-            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location 5", _description: "Test Description 5", _coordinate: new Vector3(1, 2, 3));
+            SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location 5", _description: "Test Description 5", _coordinate: new Vector3(1, 2, 3), "");
             map5.AddLocation(location: location);
             for (int i = 0; i < 20; i++)
             {

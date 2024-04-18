@@ -274,7 +274,7 @@ namespace SpatialNotes
             FileBrowser.DisplayedEntriesFilter += (entry) =>
             {
                 if (entry.IsDirectory)
-                    return false; // Don't filter folders
+                    return true; // Don't filter folders
 
 
                 string extension = Path.GetExtension(entry.Path).ToLower();
@@ -335,10 +335,19 @@ namespace SpatialNotes
             }
             else
             {
-                string[] error = FileBrowser.Result;
-                string errorString = string.Join(", ", error);
-                Debug.Log("Error: " + errorString);
-                TriggerPopup("Error: " + errorString, "Error", "xmark");
+                _explorerActive = false;
+                try
+                {
+                    string[] error = FileBrowser.Result;
+                    string errorString = string.Join(", ", error);
+                    Debug.Log("Error: " + errorString);
+                    TriggerPopup("Error: " + errorString, "Error", "xmark");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log("Error: " + e.Message);
+                    
+                }
             }
             _explorerActive = false;
         }

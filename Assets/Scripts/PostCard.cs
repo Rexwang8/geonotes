@@ -71,14 +71,15 @@ namespace SpatialNotes
         public string description; // Path of location Image
 
         public Vector3 coordinate; // Coordinate of the location
+        public string imagePath; // Path of location Image
 
-        public LocationInfo(string _locationName, string _description, Vector3 _coordinate)
+        public LocationInfo(string _locationName, string _description, Vector3 _coordinate, string _imagePath="") // Constructor for LocationInfo
         {
             locationName = _locationName;
             description = _description;
             coordinate = _coordinate;
+            imagePath = _imagePath;
         }
-
         public Vector3 GetLocationInUnityCoords()
         {
             // Convert coordinate to Unity coordinates
