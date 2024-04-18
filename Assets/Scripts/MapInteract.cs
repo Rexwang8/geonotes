@@ -18,6 +18,7 @@ namespace SpatialNotes
         [SerializeField]
         private GameObject sideMenuCreateLocation;
         private GameObject sideMenuShowLocation;
+        private GameObject sideMenuShowLocationContent;
         private GameObject sideMenuCreateLocationButtonAdd;
         private GameObject sideMenuCreateLocationButtonCancel;
         private GameObject sideMenuCreateLocationNameField;
@@ -83,6 +84,9 @@ namespace SpatialNotes
             emptySideMenuNoSelection = sideMenu.transform.Find("SideMenuNoSelect").gameObject;
             sideMenuCreateLocation = sideMenu.transform.Find("SideMenuCreateLocation").gameObject;
             sideMenuShowLocation = sideMenu.transform.Find("SideMenuExistingLocation").gameObject;
+            //get content child inside viewport of scroll view of sidemenushowlocation
+            sideMenuShowLocationContent = sideMenuShowLocation.transform.Find("Scroll View").transform.Find("Viewport").transform.Find("Content").gameObject;
+            
 
             // Get the location button
             sideMenuCreateLocationButtonAdd = sideMenuCreateLocation.transform.Find("Add").gameObject;
@@ -471,11 +475,11 @@ namespace SpatialNotes
 
             //Set text to the location
             LocationInfo locInfo = locationPin.GetComponent<PinID>().locationInfo;
-            TextMeshProUGUI locationText = sideMenuShowLocation.transform.Find("LocationText").GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI locationText = sideMenuShowLocationContent.transform.Find("LocationText").GetComponent<TextMeshProUGUI>();
             locationText.text = locInfo.locationName;
-            TextMeshProUGUI CoordinatesText = sideMenuShowLocation.transform.Find("CoordinateText").GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI CoordinatesText = sideMenuShowLocationContent.transform.Find("CoordinateText").GetComponent<TextMeshProUGUI>();
             CoordinatesText.text = "Coordinates: (" + locInfo.coordinate.x + ", " + locInfo.coordinate.y + ")";
-            TextMeshProUGUI DescriptionText = sideMenuShowLocation.transform.Find("DescriptionText").GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI DescriptionText = sideMenuShowLocationContent.transform.Find("DescriptionText").GetComponent<TextMeshProUGUI>();
             DescriptionText.text = "Description: " + locInfo.description;
 
             sideMenuShowLocation.SetActive(true);
