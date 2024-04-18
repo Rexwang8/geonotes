@@ -3,13 +3,14 @@ using TigerForge;
 
 namespace SpatialNotes
 {
-    public class Cursor_Main : MonoBehaviour
+    public class Cursor_inMap : MonoBehaviour
     {
         public Texture2D cursorNormal;
         public Texture2D cursorQuestionMark;
         public Texture2D cursorDrag;
         public Texture2D cursorExit;
-        
+        public Texture2D customLeftClickCursor; // Custom cursor for left-click
+        public Texture2D customRightClickCursor; // Custom cursor for right-click
 
         void Start()
         {
@@ -17,7 +18,28 @@ namespace SpatialNotes
             EventManager.StartListening("CURSOR_REFRESH", ListenToCursorEvent);
         }
 
-        
+        void Update()
+        {
+            // Check for left mouse button click to change cursor
+            if (Input.GetMouseButtonDown(0)) // 0 corresponds to the left mouse button
+            {
+                SetCursor(customLeftClickCursor);
+            }
+            else if (Input.GetMouseButtonUp(0))
+            {
+                SetCursor(cursorNormal);
+            }
+
+            // Check for right mouse button click to change cursor
+            if (Input.GetMouseButtonDown(1)) // 1 corresponds to the right mouse button
+            {
+                SetCursor(customRightClickCursor);
+            }
+            else if (Input.GetMouseButtonUp(1))
+            {
+                SetCursor(cursorNormal);
+            }
+        }
 
         void ListenToCursorEvent()
         {
