@@ -93,6 +93,8 @@ MonoBehaviour:
     locationName: 
     description: 
     coordinate: {x: 0, y: 0, z: 0}
+    imagePath: 
+  type: 
 --- !u!1 &7061342130765873918
 GameObject:
   m_ObjectHideFlags: 0
@@ -161,7 +163,7 @@ MonoBehaviour:
   m_text: Fill This Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5fbded4a44387a34191beae54bec0f5e, type: 2}
-  m_sharedMaterial: {fileID: -3594795725793620536, guid: 5fbded4a44387a34191beae54bec0f5e, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: eefb399fce0bf914a9020b9db72830be, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

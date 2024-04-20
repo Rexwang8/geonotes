@@ -21,6 +21,7 @@ namespace SpatialNotes
         [SerializeField]
         private GameObject sideMenuCreateLocation;
         private GameObject sideMenuShowLocation;
+        private GameObject sideMenuEditLocation;
         private GameObject sideMenuShowLocationContent;
         private GameObject sideMenuCreateLocationButtonAdd;
         private GameObject sideMenuCreateLocationButtonCancel;
@@ -73,6 +74,8 @@ namespace SpatialNotes
         //placeholder image for location if none
         public Sprite placeholderImage;
 
+        private LocationInfo _selectedLocationInfo; // The location info of the selected location
+
         void Start()
         {
             createButton.onClick.AddListener(addButtonClick);
@@ -101,6 +104,7 @@ namespace SpatialNotes
             emptySideMenuNoSelection = sideMenu.transform.Find("SideMenuNoSelect").gameObject;
             sideMenuCreateLocation = sideMenu.transform.Find("SideMenuCreateLocation").gameObject;
             sideMenuShowLocation = sideMenu.transform.Find("SideMenuExistingLocation").gameObject;
+            sideMenuEditLocation = sideMenu.transform.Find("SideMenuEditLocation").gameObject;
             //get content child inside viewport of scroll view of sidemenushowlocation
             sideMenuShowLocationContent = sideMenuShowLocation.transform.Find("Scroll View").transform.Find("Viewport").transform.Find("Content").gameObject;
             showMorePanel = sideMenuShowLocation.transform.Find("ShowMore").gameObject.transform.Find("Panel").gameObject;
@@ -119,6 +123,8 @@ namespace SpatialNotes
             sideMenuCreateLocationButtonAdd.GetComponent<Button>().onClick.AddListener(LocationAdd);
             sideMenuCreateLocationButtonCancel.GetComponent<Button>().onClick.AddListener(LocationCancel);
             sideMenuNoSelectAddLocButton.GetComponent<Button>().onClick.AddListener(_existingMenuAddLocButton);
+            sideMenuEditLocation.transform.Find("Submit").GetComponent<Button>().onClick.AddListener(SubmitEditLocation);
+            sideMenuEditLocation.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(CancelEditLocation);
             
             // Hide the side menu
             
@@ -135,6 +141,12 @@ namespace SpatialNotes
 
         void Update()
         {
+            bool _IsGamePaused = EventManager.GetBool("GAME_PAUSED");
+            if (_IsGamePaused)
+            {
+                return;
+            }
+
             //Handle zoom in and out WIP
             if (!_explorerActive)
             {
@@ -168,6 +180,7 @@ namespace SpatialNotes
                 {
                     Debug.Log("Clicked on location pin: " + clickedPin.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text);
                     _showSideMenuShowLocation(clickedPin);
+                    _selectedLocationInfo = clickedPin.GetComponent<PinID>().locationInfo;
                 }
                 else
                 {
@@ -406,7 +419,7 @@ namespace SpatialNotes
             sideMenuCreateLocationIsImageSelected.SetActive(false);
 
             //move image file to map directory and change path to new path
-            string newImagePath = Application.streamingAssetsPath + map.mapAssetsPath + Path.GetFileName(selectedPath);
+            string newImagePath = Application.streamingAssetsPath + map.mapAssetsPath + "/" + Path.GetFileName(selectedPath);
             File.Copy(selectedPath, newImagePath, true);
             _pathToImageBeingCreated = newImagePath;
 
@@ -495,6 +508,7 @@ namespace SpatialNotes
         {
             emptySideMenuNoSelection.SetActive(false);
             sideMenuCreateLocation.SetActive(false);
+            sideMenuEditLocation.SetActive(false);
             _hideSideMenuShowLocation();
         }
 
@@ -681,7 +695,7 @@ namespace SpatialNotes
 
             //show image if it exists else show placeholder
             GameObject displayIMG = sideMenuShowLocationContent.transform.Find("LocationImage").gameObject;
-            if (locInfo.imagePath != "")
+            if (locInfo.imagePath != "" && locInfo.imagePath != null)
             {
                 Texture2D texture = new Texture2D(2, 2);
                 byte[] fileData;
@@ -703,6 +717,29 @@ namespace SpatialNotes
             }
 
             sideMenuShowLocation.SetActive(true);
+        }
+
+        public void DeleteLocation()
+        {
+            //delete a single location
+             Debug.Log("Delete Location" + _selectedLocationInfo.locationName);
+            map.DeleteLocation(_selectedLocationInfo.coordinate);
+
+            //call for save to file
+            map.SaveAll();
+
+            //remove the pin
+            _removeAllPins(locationPinsFolder);
+            //reload the locations
+            OnStartLoadLocations();
+            //hide the side menu
+            _hideSideMenu();
+            _HideAllSideMenuBranches();
+            CloseSideExistingMenu();
+
+            
+
+
         }
         private void _hideSideMenuShowLocation()
         {
@@ -814,14 +851,119 @@ namespace SpatialNotes
             }
         }
 
-        public void DeleteLocation()
-        {
-            Debug.Log("Delete Location");
-        }
-
         public void EditLocation()
         {
+            // show the edit location menu
             Debug.Log("Edit Location");
+            _HideAllSideMenuBranches();
+            sideMenuEditLocation.SetActive(true);
+
+            // define gameobjects to change
+            GameObject nameField = sideMenuEditLocation.transform.Find("Name").gameObject;
+            GameObject descriptionField = sideMenuEditLocation.transform.Find("Description").gameObject;
+            GameObject imageField = sideMenuEditLocation.transform.Find("DisplayIMG").gameObject;
+            //GameObject isImageSelected = sideMenuEditLocation.transform.Find("IsImage").gameObject;
+
+            // fill in the fields
+            nameField.GetComponent<TMP_InputField>().text = _selectedLocationInfo.locationName;
+            descriptionField.GetComponent<TMP_InputField>().text = _selectedLocationInfo.description;
+            if (_selectedLocationInfo.imagePath != "" && _selectedLocationInfo.imagePath != null)
+            {
+                Texture2D texture = new Texture2D(2, 2);
+                byte[] fileData;
+                if (File.Exists(_selectedLocationInfo.imagePath))
+                {
+                    fileData = File.ReadAllBytes(_selectedLocationInfo.imagePath);
+                    texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                    imageField.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                }
+                else
+                {
+                    Debug.Log("File does not exist: " + _selectedLocationInfo.imagePath);
+                    TriggerPopup("File does not exist: " + _selectedLocationInfo.imagePath, "File Not Found", "xmark");
+                }
+            }
+            else
+            {
+                imageField.GetComponent<UnityEngine.UI.Image>().sprite = placeholderImage;
+            }
+            
+            _imageToCreateWith = imageField;
+            _pathToImageBeingCreated = _selectedLocationInfo.imagePath;
+            imageField.SetActive(true);
+
+
+
+
+
+        }
+
+        public void SubmitEditLocation()
+        {
+            Debug.Log("Submit Edit Location");
+            // get the fields
+            GameObject nameField = sideMenuEditLocation.transform.Find("Name").gameObject;
+            GameObject descriptionField = sideMenuEditLocation.transform.Find("Description").gameObject;
+            GameObject imageField = sideMenuEditLocation.transform.Find("DisplayIMG").gameObject;
+
+            // get the values
+            string locationName = nameField.GetComponent<TMP_InputField>().text;
+            string locationDescription = descriptionField.GetComponent<TMP_InputField>().text;
+            string locationImagePath = _selectedLocationInfo.imagePath;
+            if (_pathToImageBeingCreated != "")
+            {
+                locationImagePath = _pathToImageBeingCreated;
+            }
+
+            // update the location
+            map.UpdateLocation(_selectedLocationInfo.coordinate, locationName, locationDescription, locationImagePath);
+            Debug.Log("Location Updated");
+
+            // update the pin
+            foreach (Transform child in locationPinsFolder.transform)
+            {
+                if (child.GetComponent<PinID>().locationInfo == _selectedLocationInfo)
+                {
+                    // update the pin
+                    GameObject pinName = child.transform.Find("PinName").gameObject;
+                    pinName.GetComponent<TextMeshProUGUI>().text = locationName;
+                    //populate pinID
+                    PinID id = child.GetComponent<PinID>();
+                    id.locationInfo = new LocationInfo(locationName, locationDescription, _selectedLocationInfo.coordinate, locationImagePath);
+                    id.type = "Location";
+                    //pins of locations are green
+                    child.GetComponent<Image>().color = Color.green;
+                    break;
+                }
+            }
+
+            //call for save to file
+            map.SaveAll();
+
+            //clear the fields for the next location
+            nameField.GetComponent<TMP_InputField>().text = "";
+            descriptionField.GetComponent<TMP_InputField>().text = "";
+            _pathToImageBeingCreated = "";
+            //hide the image
+            imageField.SetActive(false);
+
+            //remove temporary pins
+            _removeAllPins(pinsFolder);
+
+            //Close the add location canvas
+            _hideSideMenu();
+
+            //hide show more panel
+            CloseSideExistingMenu();
+        }
+
+        public void CancelEditLocation()
+        {
+            Debug.Log("Cancel Edit Location");
+            //hide show more panel
+            CloseSideExistingMenu();
+            _HideAllSideMenuBranches();
+            _hideSideMenu();
         }
 
         public void FavoriteLocation()

@@ -70,6 +70,7 @@ namespace SpatialNotes
         public string locationName; // Name of the location
         public string description; // Path of location Image
 
+        [SerializeField]
         public Vector3 coordinate; // Coordinate of the location
         public string imagePath; // Path of location Image
 

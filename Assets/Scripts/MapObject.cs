@@ -171,6 +171,113 @@ namespace SpatialNotes
             tbnSize = new Vector2Int(thumbnail.width, thumbnail.height);
         }
 
+        public void UpdateLocation(string locCoord, string locName, string locDescription, string locImagePath = "")
+        {
+            if (locationDict.ContainsKey(locCoord))
+            {
+                locationDict[locCoord].locationName = locName;
+                locationDict[locCoord].description = locDescription;
+                locationDict[locCoord].imagePath = locImagePath;
+            }
+            else
+            {
+                Debug.LogWarning("Location does not exist. Please add the location first.");
+            }
+        }
+
+        public void UpdateLocation(Vector3 locCoord, string locName, string locDescription, string locImagePath = "")
+        {
+            string locCoordStr = locCoord.x + "," + locCoord.y + "," + locCoord.z;
+            UpdateLocation(locCoordStr, locName, locDescription, locImagePath);
+        }
+
+        public void UpdateLocation(LocationInfo location)
+        {
+            string locCoordStr = location.coordinate.x + "," + location.coordinate.y + "," + location.coordinate.z;
+            UpdateLocation(locCoordStr, location.locationName, location.description, location.imagePath);
+        }
+
+        public void UpdatePostcard(string locCoord, int index, PostCard postcard)
+        {
+            if (notesDict.ContainsKey(locCoord))
+            {
+                if (index < notesDict[locCoord].Count)
+                {
+                    notesDict[locCoord].list[index] = postcard;
+                }
+                else
+                {
+                    Debug.LogWarning("Index out of range. Please enter a valid index.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Location does not exist. Please add the location first.");
+            }
+        }
+
+        public void UpdatePostcard(LocationInfo location, int index, PostCard postcard)
+        {
+            string locCoordStr = location.coordinate.x + "," + location.coordinate.y + "," + location.coordinate.z;
+            UpdatePostcard(locCoordStr, index, postcard);
+        }
+
+        public void RefreshCoordinatesOfLocations()
+        {
+            foreach (KeyValuePair<string, LocationInfo> location in locationDict)
+            {
+                location.Value.coordinate = _convertCoordStr2Vec3(location.Key);
+                Debug.Log("Location: " + location.Key + " " + location.Value.locationName + " " + location.Value.description);
+            }
+        }
+
+        public void DeleteLocation(string locCoord)
+        {
+            if (locationDict.ContainsKey(locCoord))
+            {
+                locationDict.Remove(locCoord);
+                if (notesDict.ContainsKey(locCoord))
+                {
+                    notesDict.Remove(locCoord);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Location does not exist. Please enter a valid location.");
+            }
+        }
+
+        public void DeleteLocation(Vector3 locCoord)
+        {
+            string locCoordStr = locCoord.x + "," + locCoord.y + "," + locCoord.z;
+            DeleteLocation(locCoordStr);
+        }
+
+        public void DeletePostcard(string locCoord, int index)
+        {
+            if (notesDict.ContainsKey(locCoord))
+            {
+                if (index < notesDict[locCoord].Count)
+                {
+                    notesDict[locCoord].list.RemoveAt(index);
+                }
+                else
+                {
+                    Debug.LogWarning("Index out of range. Please enter a valid index.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Location does not exist. Please enter a valid location.");
+            }
+        }
+
+        public void DeletePostcard(LocationInfo location, int index)
+        {
+            string locCoordStr = location.coordinate.x + "," + location.coordinate.y + "," + location.coordinate.z;
+            DeletePostcard(locCoordStr, index);
+        }
+
         public void CreateMap(string _TEMP_IMAGE_PATH, string _name)
         {
             if (_TEMP_IMAGE_PATH == null)
@@ -240,6 +347,9 @@ namespace SpatialNotes
             {
                 System.IO.Directory.CreateDirectory(assetsFolderPath);
             }
+
+            // Make sure data is up to date
+            RefreshCoordinatesOfLocations();
 
             // Save the map data to streamable assets/maps
             string json = SerializeToJson();
@@ -377,6 +487,9 @@ namespace SpatialNotes
         // Save location list to a file (JSON)
         private void _saveLocationJson()
         {
+            // Refresh coordinates of locations
+            RefreshCoordinatesOfLocations();
+            // Save location list to a file (JSON)
             string json = JsonUtility.ToJson(locationDict);
             System.IO.File.WriteAllText(Application.streamingAssetsPath + locationJsonPath, json);
         }
@@ -433,6 +546,10 @@ namespace SpatialNotes
             notesDict = JsonUtility.FromJson<SerializableDictionary<string, JsonableListWrapper<PostCard>>>(json);
             json = System.IO.File.ReadAllText(Application.streamingAssetsPath + locationJsonPath);
             locationDict = JsonUtility.FromJson<SerializableDictionary<string, LocationInfo>>(json);
+
+            // Make sure data is up to date
+            RefreshCoordinatesOfLocations();
+
             //Debug.Log(notesDict);
             //Debug.Log(locationDict);
             //Debug.Log("number of notes: " + GetNumberOfNotes());
