@@ -27,6 +27,7 @@ namespace SpatialNotes
         private GameObject sideMenuCreateLocationNameField;
         private GameObject sideMenuCreateLocationDescriptionField;
         private GameObject sideMenuCreateLocationIsImageSelected;
+        private GameObject showMorePanel;
         public GameObject pinsFolder;
         public GameObject locationPinsFolder;
         public GameObject pinPrefab;
@@ -102,7 +103,7 @@ namespace SpatialNotes
             sideMenuShowLocation = sideMenu.transform.Find("SideMenuExistingLocation").gameObject;
             //get content child inside viewport of scroll view of sidemenushowlocation
             sideMenuShowLocationContent = sideMenuShowLocation.transform.Find("Scroll View").transform.Find("Viewport").transform.Find("Content").gameObject;
-
+            showMorePanel = sideMenuShowLocation.transform.Find("ShowMore").gameObject.transform.Find("Panel").gameObject;
 
             // Get the location button
             sideMenuCreateLocationButtonAdd = sideMenuCreateLocation.transform.Find("Add").gameObject;
@@ -118,7 +119,10 @@ namespace SpatialNotes
             sideMenuCreateLocationButtonAdd.GetComponent<Button>().onClick.AddListener(LocationAdd);
             sideMenuCreateLocationButtonCancel.GetComponent<Button>().onClick.AddListener(LocationCancel);
             sideMenuNoSelectAddLocButton.GetComponent<Button>().onClick.AddListener(_existingMenuAddLocButton);
-
+            
+            // Hide the side menu
+            
+            showMorePanel.SetActive(false);
 
             _removeAllPins(pinsFolder);
             _hideSideMenu();
@@ -781,6 +785,54 @@ namespace SpatialNotes
             EventManager.SetData("MODEL_POPUP_TITLE", title);
             EventManager.SetData("MODEL_POPUP_IMAGE", imageName);
             EventManager.EmitEvent(eventName: "MODEL_POPUP", delay: 0, sender: gameObject);
+        }
+
+
+        /*
+        Side Menu Functions
+        */
+
+        // Start is called before the first frame update
+
+        public void Toggle()
+        {
+            //If the side menu is active
+            if (!showMorePanel.activeSelf)
+            {
+                //Hide the side menu
+                showMorePanel.SetActive(true);
+            }
+        }
+
+        public void CloseShowMore()
+        {
+            //If the side menu is active
+            if (showMorePanel.activeSelf)
+            {
+                //Hide the side menu
+                showMorePanel.SetActive(false);
+            }
+        }
+
+        public void DeleteLocation()
+        {
+            Debug.Log("Delete Location");
+        }
+
+        public void EditLocation()
+        {
+            Debug.Log("Edit Location");
+        }
+
+        public void FavoriteLocation()
+        {
+            Debug.Log("Favorite Location");
+        }
+
+        public void CloseSideExistingMenu()
+        {
+            showMorePanel.SetActive(false);
+            sideMenuShowLocation.SetActive(false);
         }
     }
 
