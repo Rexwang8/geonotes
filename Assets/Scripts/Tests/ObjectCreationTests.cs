@@ -66,13 +66,17 @@ namespace SpatialNotesTest
         {
             // Create a new map object
             MapObject map1 = new MapObject();
-            Assert.AreEqual(map1.GetNumberOfNotes(), 0);
-            Debug.Log("Test Passed");
 
-            // Clear used asset folder
-            map1.DeleteMap();
+            // Assert that initially there are no notes
+            Assert.AreEqual(map1.GetNumberOfNotes(), 0);
+
+            // Clean up resources (if needed)
+            // map1.DeleteMap(); // Ensure this method is properly implemented to avoid potential side effects
+
+            // Dispose of the map1 instance
             map1 = null;
         }
+
 
         // Test instantiation of map with name, tbn and img
         [Test]
