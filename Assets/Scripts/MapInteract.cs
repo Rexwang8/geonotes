@@ -660,8 +660,6 @@ namespace SpatialNotes
             //Set text to the location
             TextMeshProUGUI locationText = emptySideMenuNoSelection.transform.Find("Coordinates").GetComponent<TextMeshProUGUI>();
             locationText.text = "(" + coord.x + ", " + coord.y + ")";
-            TextMeshProUGUI DescriptionText = emptySideMenuNoSelection.transform.Find("DescriptionText").GetComponent<TextMeshProUGUI>();
-            DescriptionText.text = "Description: ";
 
             emptySideMenuNoSelection.SetActive(true);
 
