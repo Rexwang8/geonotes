@@ -74,8 +74,32 @@ namespace SpatialNotes
         //placeholder image for location if none
         public Sprite placeholderImage;
 
-        private LocationInfo _selectedLocationInfo; // The location info of the selected location
+        public LocationInfo _selectedLocationInfo; // The location info of the selected location
 
+        // ----------------- Variables for postcard -----------------
+        public GameObject postcardScrollView;
+        private GameObject _postcardScrollViewContent;
+        private GameObject _postcardAddPostButton;
+
+        public GameObject prefabTextPost;
+        private GameObject _postCardContentSection;
+
+        public GameObject makepostcardMenu;
+        private GameObject _makePostCartMenuCancel;
+        private GameObject _makePostCartMenuSubmit;
+        private GameObject _makePostCartMenuTitle;
+        private GameObject _makePostCartMenuAddTextContent;
+        private GameObject _makePostCartMenuAddImageContent;
+        private GameObject _makePostCartMenuContentHolder;
+
+        public TextMediaPost _currentTextMediaPost;
+
+        public GameObject prefabPostCard;
+
+        public GameObject prefabTextPostSubmitted;
+
+
+        // ----------------- Methods -----------------
         void Start()
         {
             createButton.onClick.AddListener(addButtonClick);
@@ -117,6 +141,20 @@ namespace SpatialNotes
             sideMenuCreateLocationIsImageSelected = sideMenuCreateLocation.transform.Find("IsImage").gameObject;
             _imageToCreateWith = sideMenuCreateLocation.transform.Find("DisplayIMG").gameObject;
             sideMenuNoSelectAddLocButton = emptySideMenuNoSelection.transform.Find("AddLocButton").gameObject;
+            _postcardScrollViewContent = postcardScrollView.transform.Find("Viewport").gameObject;
+            _postcardScrollViewContent = _postcardScrollViewContent.transform.Find("Content").gameObject;
+            _postCardContentSection = _postcardScrollViewContent.transform.Find("PostCardContent").gameObject;
+            _postcardAddPostButton = _postcardScrollViewContent.transform.Find("AddPostSection").gameObject;
+            _postcardAddPostButton = _postcardAddPostButton.transform.Find("AddPostCard").gameObject;
+            _makePostCartMenuCancel = makepostcardMenu.transform.Find("Trash").gameObject;
+            _makePostCartMenuSubmit = makepostcardMenu.transform.Find("Post").gameObject;
+            _makePostCartMenuTitle = makepostcardMenu.transform.Find("Subject").gameObject;
+            _makePostCartMenuContentHolder = makepostcardMenu.transform.Find("Scroll View").gameObject;
+            _makePostCartMenuContentHolder = _makePostCartMenuContentHolder.transform.Find("Viewport").gameObject;
+            _makePostCartMenuContentHolder = _makePostCartMenuContentHolder.transform.Find("Content").gameObject;
+            _makePostCartMenuAddImageContent = makepostcardMenu.transform.Find("AddImage").gameObject;
+            _makePostCartMenuAddTextContent = makepostcardMenu.transform.Find("AddTextbox").gameObject;
+
             _imageToCreateWith.SetActive(false);
 
             // Add button listeners
@@ -125,9 +163,16 @@ namespace SpatialNotes
             sideMenuNoSelectAddLocButton.GetComponent<Button>().onClick.AddListener(_existingMenuAddLocButton);
             sideMenuEditLocation.transform.Find("Submit").GetComponent<Button>().onClick.AddListener(SubmitEditLocation);
             sideMenuEditLocation.transform.Find("Cancel").GetComponent<Button>().onClick.AddListener(CancelEditLocation);
-            
+            _postcardAddPostButton.GetComponent<Button>().onClick.AddListener(OpenPostcardMenu);
+            _makePostCartMenuCancel.GetComponent<Button>().onClick.AddListener(ClosepostcardMenu);
+            _makePostCartMenuSubmit.GetComponent<Button>().onClick.AddListener(SubmitPostcard);
+            _makePostCartMenuAddTextContent.GetComponent<Button>().onClick.AddListener(AddTextContent);
+            _makePostCartMenuAddImageContent.GetComponent<Button>().onClick.AddListener(AddImageContent);
+
+
+
             // Hide the side menu
-            
+
             showMorePanel.SetActive(false);
 
             _removeAllPins(pinsFolder);
@@ -146,9 +191,11 @@ namespace SpatialNotes
             {
                 return;
             }
+            bool IsInMenu = _getSideMenUIsActive();
+
 
             //Handle zoom in and out WIP
-            if (!_explorerActive)
+            if (!_explorerActive && !IsInMenu)
             {
                 if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward
                 {
@@ -160,8 +207,38 @@ namespace SpatialNotes
                 }
             }
 
+            // middle mouse or esc button
+            if (Input.GetMouseButtonDown((int)mouseButton.Middle) || Input.GetKeyDown(KeyCode.Escape))
+            {
+                _removeAllPins(pinsFolder);
+                _hideSideMenu();
+                EventManager.SetData("CURSOR_NAME", "NORMAL");
+                EventManager.EmitEvent("CURSOR_REFRESH");
+                Debug.Log("Middle Mouse Button Clicked");
+            }
+
+            
+
+            //set cursor to normal if in menu and if right click is not held
+            if (IsInMenu && EventManager.GetString("CURSOR_NAME") != "NORMAL" && !Input.GetMouseButton((int)mouseButton.Right))
+            {
+                EventManager.SetData("CURSOR_NAME", "NORMAL");
+                EventManager.EmitEvent("CURSOR_REFRESH");
+                return;
+                }
+            else if (EventManager.GetString("CURSOR_NAME") != "CIRCLE" && Input.GetMouseButton((int)mouseButton.Right))
+            {
+                EventManager.SetData("CURSOR_NAME", "CIRCLE");
+                EventManager.EmitEvent("CURSOR_REFRESH");
+            }
+            //is in menu but not right click held
+            if (IsInMenu)
+            {
+                return;
+            }
+
             // move right click menu to mouse position
-            if (Input.GetMouseButtonDown((int)mouseButton.Right))
+            if (Input.GetMouseButtonUp((int)mouseButton.Right))
             {
 
                 _removeAllPins(pinsFolder);
@@ -169,9 +246,6 @@ namespace SpatialNotes
                 lastCandidateUiPos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0);
                 lastSelectedLocation = lastCandidateUiPos;
                 Vector3 worldClickPos = _getWorldClickPosition(lastSelectedLocation);
-                //_debugShowNearbyPinsToClick(worldClickPos);
-                EventManager.SetData("CURSOR_NAME", "CIRCLE");
-                EventManager.EmitEvent("CURSOR_REFRESH");
 
 
 
@@ -179,8 +253,9 @@ namespace SpatialNotes
                 if (clickedPin != null)
                 {
                     Debug.Log("Clicked on location pin: " + clickedPin.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text);
-                    _showSideMenuShowLocation(clickedPin);
                     _selectedLocationInfo = clickedPin.GetComponent<PinID>().locationInfo;
+                    _showSideMenuShowLocation(clickedPin);
+                    
                 }
                 else
                 {
@@ -203,15 +278,7 @@ namespace SpatialNotes
                 }
             }
 
-            // middle mouse or esc button
-            if (Input.GetMouseButtonDown((int)mouseButton.Middle) || Input.GetKeyDown(KeyCode.Escape))
-            {
-                _removeAllPins(pinsFolder);
-                _hideSideMenu();
-                EventManager.SetData("CURSOR_NAME", "NORMAL");
-                EventManager.EmitEvent("CURSOR_REFRESH");
-                Debug.Log("Middle Mouse Button Clicked");
-            }
+
 
 
             // Left Click Drag
@@ -258,6 +325,11 @@ namespace SpatialNotes
                     EventManager.EmitEvent("CURSOR_REFRESH");
                 }
             }
+        }
+
+        private bool IsInMenu()
+        {
+            return sideMenu.activeInHierarchy;
         }
 
         public void OnStartLoadLocations()
@@ -355,7 +427,6 @@ namespace SpatialNotes
             _explorerActive = true;
             // Directories only
             yield return FileBrowser.WaitForLoadDialog(SimpleFileBrowser.FileBrowser.PickMode.Files, true, _defaultPath, null, "Select Map Folder", "Load");
-            Debug.Log(FileBrowser.Success + " " + FileBrowser.Result);
             if (FileBrowser.Success)
             {
                 OnFolderSelectedLoadFileImages(FileBrowser.Result);
@@ -388,13 +459,23 @@ namespace SpatialNotes
                 TriggerPopup("No files were selected", "No Files Selected", "xmark");
                 return;
             }
-            foreach (string path in paths)
-            {
-                Debug.Log("Selected file: " + path);
-            }
+            //foreach (string path in paths)
+            //{
+            //    Debug.Log("Selected file: " + path);
+            //}
 
             // select only one 
             string selectedPath = paths[0];
+
+            //move image file to map directory and change path to new path
+            string newImagePath = Application.streamingAssetsPath + map.mapAssetsPath + "/" + Path.GetFileName(selectedPath);
+            File.Copy(selectedPath, newImagePath, true);
+            _pathToImageBeingCreated = newImagePath;
+            selectedPath = newImagePath;
+
+
+
+
 
             //Try to load the image
             Texture2D texture = new Texture2D(2, 2);
@@ -418,10 +499,7 @@ namespace SpatialNotes
             _imageToCreateWith.SetActive(true);
             sideMenuCreateLocationIsImageSelected.SetActive(false);
 
-            //move image file to map directory and change path to new path
-            string newImagePath = Application.streamingAssetsPath + map.mapAssetsPath + "/" + Path.GetFileName(selectedPath);
-            File.Copy(selectedPath, newImagePath, true);
-            _pathToImageBeingCreated = newImagePath;
+
 
 
             // Trigger popup
@@ -501,6 +579,7 @@ namespace SpatialNotes
 
         private void _hideSideMenu()
         {
+            _HideAllSideMenuBranches();
             sideMenu.SetActive(false);
         }
 
@@ -509,6 +588,7 @@ namespace SpatialNotes
             emptySideMenuNoSelection.SetActive(false);
             sideMenuCreateLocation.SetActive(false);
             sideMenuEditLocation.SetActive(false);
+            ClosepostcardMenu();
             _hideSideMenuShowLocation();
         }
 
@@ -680,6 +760,8 @@ namespace SpatialNotes
         private void _showSideMenuShowLocation(GameObject locationPin)
         {
             _showSideMenuEmpty();
+            _drawAndUpdateSideBarForLocation();
+
 
 
             //Set text to the location
@@ -720,7 +802,7 @@ namespace SpatialNotes
         public void DeleteLocation()
         {
             //delete a single location
-             Debug.Log("Delete Location" + _selectedLocationInfo.locationName);
+            Debug.Log("Delete Location" + _selectedLocationInfo.locationName);
             map.DeleteLocation(_selectedLocationInfo.coordinate);
 
             //call for save to file
@@ -735,7 +817,7 @@ namespace SpatialNotes
             _HideAllSideMenuBranches();
             CloseSideExistingMenu();
 
-            
+
 
 
         }
@@ -743,60 +825,6 @@ namespace SpatialNotes
         {
             sideMenuShowLocation.SetActive(false);
         }
-
-
-        /*
-
-                private Vector3 _convertMousePos2Coord(Vector2 mousePos)
-                {
-                    //Get data
-                    Vector4 visibleDims = _calcVisibleImageDims();
-                    Vector2 centerPoint = _calcCenterpoint(visibleDims);
-                    Vector2 visibleSize = _calcVisibleSize(visibleDims);
-
-                    // add the visible dims to the mouse pos
-                    Vector2 mousePosPercentage = new Vector2(mousePos.x / Screen.width, mousePos.y / Screen.height);
-                    Vector2 mousePosAddVisSize = new Vector2(mousePosPercentage.x * visibleSize.x, mousePosPercentage.y * visibleSize.y);
-                    Vector2 mousePosAddVisDims = new Vector2(mousePosAddVisSize.x + visibleDims.x, mousePosAddVisSize.y + visibleDims.y);
-                    // convert the mouse pos to a percentage of the Actual dims
-                    Vector2 coord = new Vector2(mousePosAddVisDims.x / 16, mousePosAddVisDims.y / 9);
-
-                    // round to 3 decimal places
-                    coord.x = Mathf.Round(coord.x * 1000) / 1000;
-                    coord.y = Mathf.Round(coord.y * 1000) / 1000;
-
-                    //clamp to 0-100
-                    coord.x = Mathf.Clamp(coord.x, 0, 100);
-                    coord.y = Mathf.Clamp(coord.y, 0, 100);
-                    return coord;
-                }
-
-                private Vector3 _convertCoord2MousePos(Vector3 coord)
-                {
-                    //Get data
-                    Vector4 visibleDims = _calcVisibleImageDims();
-                    Vector2 centerPoint = _calcCenterpoint(visibleDims);
-                    Vector2 visibleSize = _calcVisibleSize(visibleDims);
-
-                    Vector2 coordActualLocation = new Vector2(coord.x * 16, coord.y * 9);
-                    Vector2 coordSubVisDims = new Vector2(coordActualLocation.x - visibleDims.x, coordActualLocation.y - visibleDims.y);
-                    Vector2 coordSubVisDimsPercentage = new Vector2(coordSubVisDims.x / visibleSize.x, coordSubVisDims.y / visibleSize.y);
-
-                    // convert to mouse pos
-                    Vector2 mousePos = new Vector2(coordSubVisDimsPercentage.x * Screen.width, coordSubVisDimsPercentage.y * Screen.height);
-
-                    // round to 2 decimal places
-                    mousePos.x = Mathf.Round(mousePos.x * 1000) / 1000;
-                    mousePos.y = Mathf.Round(mousePos.y * 1000) / 1000;
-
-                    //clamp to 0-screen width/height
-                    mousePos.x = Mathf.Clamp(mousePos.x, 0, Screen.width);
-                    mousePos.y = Mathf.Clamp(mousePos.y, 0, Screen.height);
-
-
-                    return mousePos;
-                }*/
-
         private void _removeAllPins(GameObject folder)
         {
             foreach (Transform child in folder.transform)
@@ -885,7 +913,7 @@ namespace SpatialNotes
             {
                 imageField.GetComponent<UnityEngine.UI.Image>().sprite = placeholderImage;
             }
-            
+
             _imageToCreateWith = imageField;
             _pathToImageBeingCreated = _selectedLocationInfo.imagePath;
             imageField.SetActive(true);
@@ -911,7 +939,9 @@ namespace SpatialNotes
             if (_pathToImageBeingCreated != "")
             {
                 locationImagePath = _pathToImageBeingCreated;
+                Debug.Log("New Image Path: " + locationImagePath);
             }
+
 
             // update the location
             map.UpdateLocation(_selectedLocationInfo.coordinate, locationName, locationDescription, locationImagePath);
@@ -973,6 +1003,275 @@ namespace SpatialNotes
         {
             showMorePanel.SetActive(false);
             sideMenuShowLocation.SetActive(false);
+        }
+
+        public void OpenPostcardMenu()
+        {
+            Debug.Log("Open Postcard Menu");
+            _showPostcardMenu();
+            _drawAndUpdateSideBarForLocation();
+        }
+
+        public void ClosepostcardMenu()
+        {
+            Debug.Log("Close Postcard Menu");
+
+            _clearPostcardMenu();
+            _clearPostcardPosts();
+            _hidePostcardMenu();
+            _conditionalClearPostcardPosts();
+        }
+        private void _clearPostcardPosts()
+        {
+            //clear the postcard menu
+            foreach (Transform child in _postCardContentSection.transform)
+            {
+                child.gameObject.SetActive(false);
+                GameObject.Destroy(child.gameObject);
+            }
+        }
+
+        private void _clearPostcardMenu()
+        {
+            //clear the title
+            _makePostCartMenuTitle.GetComponent<TMP_InputField>().text = "";
+        }
+        private void _conditionalClearPostcardPosts()
+        {
+            //clear the postcard menu
+            if (_selectedLocationInfo.postCard == null || _selectedLocationInfo.postCard.posts == null || _selectedLocationInfo.postCard.posts.Count == 0)
+            {
+                if (_postCardContentSection.transform.childCount > 0)
+                {
+                    _clearPostcardPosts();
+                }
+            }
+        }
+
+        private void _showPostcardMenu()
+        {
+            //show the postcard menu
+            makepostcardMenu.SetActive(true);
+        }
+
+        private void _hidePostcardMenu()
+        {
+            //hide the postcard menu
+            makepostcardMenu.SetActive(false);
+        }
+
+        public void SubmitPostcard()
+        {
+                        string title = _makePostCartMenuTitle.GetComponent<TMP_InputField>().text;
+            //update current postcard
+            for (int i = 0; i < _currentTextMediaPost.mediaComponents.Count; i++)
+            {
+                if (_currentTextMediaPost.mediaComponents[i].mediaType == "Text")
+                {
+                    TextComponent textComp = (TextComponent)_currentTextMediaPost.mediaComponents[i];
+                    GameObject textPostGameObject = GameObject.Find(textComp.uuid);
+                    textComp.textContent = textPostGameObject.transform.GetChild(0).GetComponent<TMP_InputField>().text;
+                    Debug.Log("Text Content: " + textComp.textContent);
+                }
+            }
+            _currentTextMediaPost.title = title;
+
+
+            //get postcard that is selected
+            LocationInfo locInfo = _selectedLocationInfo;
+            if (locInfo == null)
+            {
+                Debug.Log("No location selected");
+                return;
+            }
+            if (locInfo.postCard == null || locInfo.postCard.posts == null || locInfo.postCard.posts.Count == 0)
+            {
+                locInfo.postCard = new PostCard(_date: System.DateTime.Now);
+            }
+            else
+            {
+                locInfo.postCard.date = System.DateTime.Now;
+            }
+            locInfo.postCard.posts.Add(_currentTextMediaPost);
+            //call for save to file
+            Debug.Log("Postcard submitted");
+
+            //clear the postcard menu
+            _clearPostcardMenu();
+            _hidePostcardMenu();
+
+            //call for update to postcard
+            //map.UpdateLocation(locInfo.coordinate, locInfo.locationName, locInfo.description, locInfo.imagePath, locInfo.postCard);
+            _drawAndUpdateSideBarForLocation();
+            //_debugsmushtextToPostcard();
+        }
+
+        private void _drawAndUpdateSideBarForLocation()
+        {
+            //get the location info
+            LocationInfo locInfo = _selectedLocationInfo;
+            if (locInfo == null)
+            {
+                Debug.Log("No location selected");
+                return;
+            }
+            if (locInfo.postCard == null || locInfo.postCard.posts == null || locInfo.postCard.posts.Count == 0)
+            {
+                Debug.Log("No postcards for location");
+                return;
+            }
+            Debug.Log("Drawing Postcard for location: " + locInfo.locationName + " with " + locInfo.postCard.posts.Count + " postcards");
+
+            //populate the side bar
+            //Set text to the location
+            TextMeshProUGUI locationText = sideMenuShowLocationContent.transform.Find("LocationText").GetComponent<TextMeshProUGUI>();
+            locationText.text = locInfo.locationName;
+            TextMeshProUGUI CoordinatesText = sideMenuShowLocationContent.transform.Find("CoordinateText").GetComponent<TextMeshProUGUI>();
+            CoordinatesText.text = "Coordinates: (" + locInfo.coordinate.x + ", " + locInfo.coordinate.y + ")";
+            TextMeshProUGUI DescriptionText = sideMenuShowLocationContent.transform.Find("DescriptionText").GetComponent<TextMeshProUGUI>();
+            DescriptionText.text = "Description: " + locInfo.description;
+
+            //show image if it exists else show placeholder
+            GameObject displayIMG = sideMenuShowLocationContent.transform.Find("LocationImage").gameObject;
+            if (locInfo.imagePath != "" && locInfo.imagePath != null)
+            {
+                Texture2D texture = new Texture2D(2, 2);
+                byte[] fileData;
+                if (File.Exists(locInfo.imagePath))
+                {
+                    fileData = File.ReadAllBytes(locInfo.imagePath);
+                    texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                    displayIMG.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                }
+                else
+                {
+                    Debug.Log("File does not exist: " + locInfo.imagePath);
+                    TriggerPopup("File does not exist: " + locInfo.imagePath, "File Not Found", "xmark");
+                }
+            }
+            else
+            {
+                displayIMG.GetComponent<UnityEngine.UI.Image>().sprite = placeholderImage;
+            }
+
+            sideMenuShowLocation.SetActive(true);
+
+            //for each postcard in the location
+            if (locInfo.postCard != null && locInfo.postCard.posts != null)
+            {
+                foreach (TextMediaPost post in locInfo.postCard.posts)
+                {
+                    //create the postcard
+                    GameObject postcard = Instantiate(prefabPostCard, new Vector3(0, 0, 0), Quaternion.identity);
+                    postcard.transform.SetParent(_postCardContentSection.transform);
+                    postcard.transform.localScale = new Vector3(1, 1, 1);
+                    postcard.name = "PostCard";
+                    postcard.transform.localPosition = new Vector3(0, 0, 0);
+
+                    //populate the postcard
+                    postcard.transform.Find("Title").GetComponent<TextMeshProUGUI>().text = post.title;
+                    //postcard.transform.Find("Date").GetComponent<TextMeshProUGUI>().text = post.date.ToString("yyyy-MM-dd HH:mm:ss");
+
+                    //populate the postcard content
+                    GameObject postcardContent = postcard.transform.Find("Content").gameObject;
+                    for (int i = 0; i < post.mediaComponents.Count; i++)
+                    {
+                        if (post.mediaComponents[i].mediaType == "Text")
+                        {
+                            string text = ((TextComponent)post.mediaComponents[i]).textContent;
+
+                            //create the prefabbed text content
+                            GameObject textPostGameObject = Instantiate(prefabTextPostSubmitted, new Vector3(0, 0, 0), Quaternion.identity);
+                            textPostGameObject.transform.SetParent(postcardContent.transform);
+                            textPostGameObject.transform.localScale = new Vector3(1, 1, 1);
+                            textPostGameObject.name = "TextPost" + i;
+                            textPostGameObject.transform.localPosition = new Vector3(0, 0, 0);
+                            
+                            //populate the text content
+                            textPostGameObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = text;
+
+                        }
+                    }
+
+
+                }
+
+
+            }
+
+            //trigger layout rebuild
+            Debug.Log("Rebuilding Layout for Postcard");
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_postCardContentSection.GetComponent<RectTransform>());
+        }
+
+        public void AddTextContent()
+        {
+            Debug.Log("Add Text Content");
+            //create code datastructure for text content
+            TextComponent textPost = new TextComponent();
+            textPost.mediaType = "Text";
+            //yyyy-MM-dd HH:mm:ss
+            textPost.textContent = "Description";
+            string uuid = textPost.CreateUUID();
+            _currentTextMediaPost.AddTextComponent(textPost);
+
+
+            //create the text content
+            GameObject textPostGameObject = Instantiate(prefabTextPost, new Vector3(0, 0, 0), Quaternion.identity);
+            textPostGameObject.name = uuid;
+            textPostGameObject.transform.SetParent(_makePostCartMenuContentHolder.transform);
+            textPostGameObject.transform.localScale = new Vector3(1, 1, 1);
+
+            //assign remove component button
+            GameObject rembutton = textPostGameObject.transform.GetChild(1).gameObject;
+            int index = _currentTextMediaPost.mediaComponents.Count - 1;
+            rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(uuid));
+
+            //trigger layout rebuild
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_makePostCartMenuContentHolder.GetComponent<RectTransform>());
+
+
+        }
+
+        private void _removePostComponent(string uuid)
+        {
+            GameObject component = GameObject.Find(uuid); //get the component
+            //remove the component from the postcard
+            _currentTextMediaPost.mediaComponents.RemoveAt(_currentTextMediaPost.mediaComponents.FindIndex(x => x.uuid == uuid));
+            //remove the component from the view
+            Destroy(component);
+
+
+
+
+            //trigger layout rebuild
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_postcardScrollViewContent.GetComponent<RectTransform>());
+        }
+        private void _debugsmushtextToPostcard()
+        {
+            string txt = "DEBUG:  ";
+            //combine all the text of all the text components
+            for (int i = 0; i < _currentTextMediaPost.mediaComponents.Count; i++)
+            {
+                if (_currentTextMediaPost.mediaComponents[i].mediaType == "Text")
+                {
+                    TextComponent textComp = (TextComponent)_currentTextMediaPost.mediaComponents[i];
+                    txt += textComp.textContent + " ";
+                }
+            }
+
+            //set the description of the location to this
+            _selectedLocationInfo.description = txt;
+            Debug.Log("Description: " + txt);
+
+            //hide side menu
+            _hideSideMenu();
+        }
+
+
+        public void AddImageContent()
+        {
+            Debug.Log("Add Image Content");
         }
     }
 
