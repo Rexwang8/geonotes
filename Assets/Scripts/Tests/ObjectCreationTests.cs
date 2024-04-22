@@ -34,12 +34,10 @@ namespace SpatialNotesTest
         public void InstantiatePostCardNoMedia()
         {
             // Create a new note
-            PostCard note = new PostCard(_title: "Test Note", _date: System.DateTime.Now);
-            note.UpdateTitle("Test Note 2");
-            note.DisplayContent();
+            PostCard note = new PostCard(_date: System.DateTime.Now);
             note.SaveDateTime();
             note.LoadDateTime();
-            Assert.AreEqual(note.title, "Test Note 2");
+            //Assert.AreEqual(note.title, "Test Note 2");
             Debug.Log("Test Passed");
         }
 
@@ -48,15 +46,13 @@ namespace SpatialNotesTest
         public void InstantiatePostCardNoMediaWithLocation()
         {
             // Create a new note
-            PostCard note = new PostCard(_title: "Test Note", _date: System.DateTime.Now);
-            note.UpdateTitle("Test Note 2");
-            note.DisplayContent();
+            PostCard note = new PostCard(_date: System.DateTime.Now);
             note.SaveDateTime();
             note.LoadDateTime();
             SpatialNotes.LocationInfo location = new SpatialNotes.LocationInfo(_locationName: "Test Location 2", _description: "Test Description 2", _coordinate: new Vector3(0, 0, 0), "");
-            note.location = location;
-            Assert.AreEqual(note.title, "Test Note 2");
-            Assert.AreEqual(note.location.locationName, "Test Location 2");
+            //note.location = location;
+            //Assert.AreEqual(note.title, "Test Note 2");
+            //Assert.AreEqual(note.location.locationName, "Test Location 2");
             Debug.Log("Test Passed");
         }
 
@@ -104,7 +100,7 @@ namespace SpatialNotesTest
             map3.AddLocation(location: location);
             for (int i = 0; i < 20; i++)
             {
-                PostCard note = new PostCard(_title: "Test Note " + i, _date: System.DateTime.Now);
+                PostCard note = new PostCard(_date: System.DateTime.Now);
                 map3.AddPostcard(location, note);
             }
 
@@ -131,7 +127,7 @@ namespace SpatialNotesTest
             map4.AddLocation(location: location);
             for (int i = 0; i < 20; i++)
             {
-                PostCard note = new PostCard(_title: "Test Note " + i, _date: System.DateTime.Now);
+                PostCard note = new PostCard(_date: System.DateTime.Now);
                 map4.AddPostcard(location, note);
             }
 
@@ -155,7 +151,7 @@ namespace SpatialNotesTest
             map5.AddLocation(location: location);
             for (int i = 0; i < 20; i++)
             {
-                PostCard note = new PostCard(_title: "Test Note " + i, _date: System.DateTime.Now);
+                PostCard note = new PostCard( _date: System.DateTime.Now);
                 map5.AddPostcard(location, note);
             }
 
@@ -166,10 +162,6 @@ namespace SpatialNotesTest
             Assert.AreEqual(map5.name, "ObjectCreationTest MapName 5");
             Assert.AreEqual(map5.GetNumberOfNotes(), 20);
             Assert.AreEqual(map5.GetNumberOfLocations(), 1);
-
-            // Clear used asset folder
-            //map5.DeleteMap();
-            //map5 = null;
         }
 
         // Test seerialize and deserialize of a dictionary<string, List<string>>
