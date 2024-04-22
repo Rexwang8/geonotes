@@ -365,12 +365,25 @@ namespace SpatialNotes
         public int GetNumberOfNotes()
         {
             int count = 0;
-            foreach (KeyValuePair<string, JsonableListWrapper<PostCard>> note in notesDict)
+            Debug.Log("Enter Function");
+
+            // Ensure notesDict is not null before iterating through it
+            if (notesDict != null)
             {
-                count += note.Value.Count;
+                foreach (KeyValuePair<string, JsonableListWrapper<PostCard>> note in notesDict)
+                {
+                    Debug.Log($"Inside inner for loop: Key = {note.Key}, Value.Count = {note.Value.Count}");
+                    count += note.Value.Count;
+                }
             }
+            else
+            {
+                Debug.Log("notesDict is null");
+            }
+
             return count;
         }
+
 
         //Get number of locations
         public int GetNumberOfLocations()
