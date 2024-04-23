@@ -327,11 +327,6 @@ namespace SpatialNotes
             }
         }
 
-        private bool IsInMenu()
-        {
-            return sideMenu.activeInHierarchy;
-        }
-
         public void OnStartLoadLocations()
         {
             // Get all locations from the database
@@ -574,7 +569,7 @@ namespace SpatialNotes
 
         private bool _getSideMenUIsActive()
         {
-            return sideMenu.activeInHierarchy;
+            return sideMenuCreateLocation.activeInHierarchy || sideMenuEditLocation.activeInHierarchy || makepostcardMenu.activeInHierarchy;
         }
 
         private void _hideSideMenu()
@@ -1003,6 +998,7 @@ namespace SpatialNotes
         {
             showMorePanel.SetActive(false);
             sideMenuShowLocation.SetActive(false);
+            ClosepostcardMenu();
         }
 
         public void OpenPostcardMenu()
