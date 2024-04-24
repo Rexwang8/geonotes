@@ -6937,7 +6937,7 @@ MonoBehaviour:
     mediaComponents: []
   prefabPostCard: {fileID: 1795692692388691584, guid: fe6e715e51630c042b2a471e96e31d1f, type: 3}
   prefabTextPostSubmitted: {fileID: 1521491964751291260, guid: 475ab8000da706742a8576d2eb4069d3, type: 3}
-  prefabImagePostSubmitted: {fileID: 0}
+  prefabImagePostSubmitted: {fileID: 1521491964751291260, guid: 84a3b466d93720f47a9d10990105fa4f, type: 3}
 --- !u!4 &872695254
 Transform:
   m_ObjectHideFlags: 0

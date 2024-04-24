@@ -155,7 +155,7 @@ namespace SpatialNotes
 
         public ImageComponent(_postMediaComponent _postMediaComponent)
         {
-            mediaType = _postMediaComponent.mediaType;
+            mediaType = "Image";
             uuid = _postMediaComponent.uuid;
             mediaPath = _postMediaComponent.mediaPath;
         }
