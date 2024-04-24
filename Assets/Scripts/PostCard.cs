@@ -14,6 +14,7 @@ namespace SpatialNotes
         public System.DateTime dateCreated;
         public string dateCreatedString = "";
         public string timeCreatedString = "";
+        public string title;
 
        [SerializeField]
         public List<TextMediaPost> posts = new List<TextMediaPost>();
@@ -82,6 +83,8 @@ namespace SpatialNotes
         public string mediaType;
         //uuid
         public string uuid;
+        public string textContent;
+        public string mediaPath;
         public string CreateUUID()
         {
             uuid = System.Guid.NewGuid().ToString();
@@ -93,13 +96,74 @@ namespace SpatialNotes
     [System.Serializable]
     public class TextComponent : _postMediaComponent
     {
-        public string textContent;
+        public TextComponent(string _textContent)
+        {
+            mediaType = "Text";
+            textContent = _textContent;
+        }
+
+        public TextComponent(string _textContent, string _uuid)
+        {
+            mediaType = "Text";
+            textContent = _textContent;
+            uuid = _uuid;
+        }
+
+        public TextComponent()
+        {
+            mediaType = "Text";
+            textContent = "";
+            uuid = CreateUUID();
+        }
+
+        public TextComponent(_postMediaComponent _postMediaComponent)
+        {
+            mediaType = _postMediaComponent.mediaType;
+            uuid = _postMediaComponent.uuid;
+            textContent = _postMediaComponent.textContent;
+        }
+
+        public void updateText(string _text)
+        {
+            textContent = _text;
+        }
     }
 
     [System.Serializable]
     public class ImageComponent : _postMediaComponent
     {
-        public string mediaPath;
+
+        public ImageComponent(string _mediaPath)
+        {
+            mediaType = "Image";
+            mediaPath = _mediaPath;
+        }
+
+        public ImageComponent(string _mediaPath, string _uuid)
+        {
+            mediaType = "Image";
+            mediaPath = _mediaPath;
+            uuid = _uuid;
+        }
+
+        public ImageComponent()
+        {
+            mediaType = "Image";
+            mediaPath = "";
+            uuid = CreateUUID();
+        }
+
+        public ImageComponent(_postMediaComponent _postMediaComponent)
+        {
+            mediaType = _postMediaComponent.mediaType;
+            uuid = _postMediaComponent.uuid;
+            mediaPath = _postMediaComponent.mediaPath;
+        }
+
+        public void updateMediaPath(string _mediaPath)
+        {
+            mediaPath = _mediaPath;
+        }
     }
 
     [System.Serializable]
@@ -166,6 +230,13 @@ namespace SpatialNotes
         {
             dateString = System.DateTime.Parse(date).ToString("yyyy-MM-dd");
             timeString = System.DateTime.Parse(date).ToString("HH:mm:ss");
+        }
+
+        public string GetDate()
+        {
+            //without seconds
+            string strdate = date.Substring(0, date.Length - 3);
+            return date;
         }
 
         
