@@ -139,6 +139,10 @@ namespace SpatialNotes
             mediaComponents.Add(_textComponent);
         }
         
+        public void AddImageComponent(ImageComponent _imageComponent)
+        {
+            mediaComponents.Add(_imageComponent);
+        }
 
         public void updateDate(string _date)
         {

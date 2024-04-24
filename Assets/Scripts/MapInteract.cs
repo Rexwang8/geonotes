@@ -82,6 +82,7 @@ namespace SpatialNotes
         private GameObject _postcardAddPostButton;
 
         public GameObject prefabTextPost;
+        public GameObject prefabImagePost;
         private GameObject _postCardContentSection;
 
         public GameObject makepostcardMenu;
@@ -327,11 +328,6 @@ namespace SpatialNotes
             }
         }
 
-        private bool IsInMenu()
-        {
-            return sideMenu.activeInHierarchy;
-        }
-
         public void OnStartLoadLocations()
         {
             // Get all locations from the database
@@ -574,7 +570,7 @@ namespace SpatialNotes
 
         private bool _getSideMenUIsActive()
         {
-            return sideMenu.activeInHierarchy;
+            return sideMenuCreateLocation.activeInHierarchy || sideMenuEditLocation.activeInHierarchy || makepostcardMenu.activeInHierarchy;
         }
 
         private void _hideSideMenu()
@@ -1003,6 +999,7 @@ namespace SpatialNotes
         {
             showMorePanel.SetActive(false);
             sideMenuShowLocation.SetActive(false);
+            ClosepostcardMenu();
         }
 
         public void OpenPostcardMenu()
@@ -1204,6 +1201,36 @@ namespace SpatialNotes
             LayoutRebuilder.ForceRebuildLayoutImmediate(_postCardContentSection.GetComponent<RectTransform>());
         }
 
+        public void AddImageContent()
+        {
+            Debug.Log("Add Image Content");
+            //create code datastructure for image content
+            ImageComponent imagePost = new ImageComponent();
+            imagePost.mediaType = "Image";
+            imagePost.mediaPath = "Path";
+            string uuid = imagePost.CreateUUID();
+            _currentTextMediaPost.AddImageComponent(imagePost);
+
+            //create the image content
+            GameObject imagePostGameObject = Instantiate(prefabImagePost, new Vector3(0, 0, 0), Quaternion.identity);
+            imagePostGameObject.name = uuid;
+            imagePostGameObject.transform.SetParent(_makePostCartMenuContentHolder.transform);
+            imagePostGameObject.transform.localScale = new Vector3(2, 2, 2);
+
+            //assign remove component button
+            GameObject rembutton = imagePostGameObject.transform.Find("Remove").gameObject;
+            int index = _currentTextMediaPost.mediaComponents.Count - 1;
+            rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(uuid));
+
+            //Add image logic to the image content
+            // need to write a new function for this
+            // GameObject uploadButton = imagePostGameObject.transform.Find("AddImage").gameObject.transform.Find("Upload").gameObject;
+            // uploadButton.GetComponent<Button>().onClick.AddListener(() => _openFileExplorerToLoadImages());
+
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_makePostCartMenuContentHolder.GetComponent<RectTransform>());
+        }
+
         public void AddTextContent()
         {
             Debug.Log("Add Text Content");
@@ -1214,7 +1241,6 @@ namespace SpatialNotes
             textPost.textContent = "Description";
             string uuid = textPost.CreateUUID();
             _currentTextMediaPost.AddTextComponent(textPost);
-
 
             //create the text content
             GameObject textPostGameObject = Instantiate(prefabTextPost, new Vector3(0, 0, 0), Quaternion.identity);
@@ -1241,9 +1267,6 @@ namespace SpatialNotes
             //remove the component from the view
             Destroy(component);
 
-
-
-
             //trigger layout rebuild
             LayoutRebuilder.ForceRebuildLayoutImmediate(_postcardScrollViewContent.GetComponent<RectTransform>());
         }
@@ -1266,12 +1289,6 @@ namespace SpatialNotes
 
             //hide side menu
             _hideSideMenu();
-        }
-
-
-        public void AddImageContent()
-        {
-            Debug.Log("Add Image Content");
         }
     }
 
