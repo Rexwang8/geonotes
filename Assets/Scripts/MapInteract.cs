@@ -1373,6 +1373,8 @@ namespace SpatialNotes
                 emptyPost.transform.localScale = new Vector3(1, 1, 1);
                 emptyPost.AddComponent<RectTransform>();
                 emptyPost.GetComponent<RectTransform>().sizeDelta = new Vector2(0, 0);
+                emptyPost.name = "Iamconformingtoyourjankyways:v";
+
             }
 
             //trigger layout rebuild
