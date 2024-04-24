@@ -133,7 +133,7 @@ namespace SpatialNotes
             sideMenuEditLocation = sideMenu.transform.Find("SideMenuEditLocation").gameObject;
             //get content child inside viewport of scroll view of sidemenushowlocation
             sideMenuShowLocationContent = sideMenuShowLocation.transform.Find("Scroll View").transform.Find("Viewport").transform.Find("Content").gameObject;
-            showMorePanel = sideMenuShowLocation.transform.Find("ShowMore").gameObject.transform.Find("Panel").gameObject;
+            showMorePanel = sideMenuShowLocationContent.transform.Find("LocationImage").gameObject.transform.Find("ShowMore").gameObject.transform.Find("Panel").gameObject;
 
             // Get the location button
             sideMenuCreateLocationButtonAdd = sideMenuCreateLocation.transform.Find("Add").gameObject;
@@ -1199,10 +1199,9 @@ namespace SpatialNotes
                     GameObject imgPostGameObject = GameObject.Find(imgComp.uuid);
                     imgComp.mediaPath = imgPostGameObject.transform.GetChild(2).GetComponent<TMP_Text>().text;
                     _tempPost.mediaComponents.Add(imgComp);
-
-                    
                 }
             }
+            
             _currentTextMediaPost.title = title;
             _tempPost.title = title;
             if (_currentTextMediaPost.title == "")
@@ -1248,7 +1247,6 @@ namespace SpatialNotes
         {
             //Clear the postcard menu
             _clearPostcardPosts();
-
             
             //get the location info
             LocationInfo locInfo = _selectedLocationInfo;
@@ -1367,10 +1365,14 @@ namespace SpatialNotes
                             //rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(imageComp.uuid));
                         }
                     }
-
                 }
 
-
+                //Create an empty object with no prefab
+                GameObject emptyPost = new GameObject();
+                emptyPost.transform.SetParent(_postcardScrollViewContent.transform);
+                emptyPost.transform.localScale = new Vector3(1, 1, 1);
+                emptyPost.AddComponent<RectTransform>();
+                emptyPost.GetComponent<RectTransform>().sizeDelta = new Vector2(0, 0);
             }
 
             //trigger layout rebuild

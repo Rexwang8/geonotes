@@ -349,11 +349,13 @@ namespace SpatialNotes
             }
 
             // Make sure data is up to date
-            RefreshCoordinatesOfLocations();
+            //RefreshCoordinatesOfLocations();
 
             // Save the map data to streamable assets/maps
             string json = SerializeToJson();
             System.IO.File.WriteAllText(Application.streamingAssetsPath + mapJsonPath, json);
+
+            Debug.Log("--------------Json Created: " + name);
 
             //Instantiate notes dics
             notesDict = new SerializableDictionary<string, JsonableListWrapper<PostCard>>();
