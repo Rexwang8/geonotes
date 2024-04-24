@@ -2366,7 +2366,7 @@ RectTransform:
   m_Father: {fileID: 1354908166}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6013,7 +6013,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &780145821
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6883,6 +6883,7 @@ MonoBehaviour:
       posts: []
   postcardScrollView: {fileID: 785073112}
   prefabTextPost: {fileID: 5794964523012208162, guid: 2866e240545adf64bbece8d9504131a8, type: 3}
+  prefabImagePost: {fileID: 3913196567247770694, guid: 6132693855d7ce94b9602c0419250acc, type: 3}
   makepostcardMenu: {fileID: 780145820}
   _currentTextMediaPost:
     title: 
@@ -11096,12 +11097,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1745584766}
-  - {fileID: 1721991889}
   - {fileID: 1851071781}
+  - {fileID: 780145821}
+  - {fileID: 1721991889}
   - {fileID: 1312353931}
   - {fileID: 845106267}
   - {fileID: 792349822}
-  - {fileID: 780145821}
   - {fileID: 1593570265}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -14385,7 +14386,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: -66.757, y: 40}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1933448122
 MonoBehaviour:
@@ -14442,7 +14443,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1933703017
 RectTransform:
   m_ObjectHideFlags: 0
