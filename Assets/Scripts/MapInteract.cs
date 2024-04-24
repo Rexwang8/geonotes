@@ -98,6 +98,7 @@ namespace SpatialNotes
         public GameObject prefabPostCard;
 
         public GameObject prefabTextPostSubmitted;
+        public GameObject prefabImagePostSubmitted;
 
 
         // ----------------- Methods -----------------
@@ -144,7 +145,9 @@ namespace SpatialNotes
             sideMenuNoSelectAddLocButton = emptySideMenuNoSelection.transform.Find("AddLocButton").gameObject;
             _postcardScrollViewContent = postcardScrollView.transform.Find("Viewport").gameObject;
             _postcardScrollViewContent = _postcardScrollViewContent.transform.Find("Content").gameObject;
-            _postCardContentSection = _postcardScrollViewContent.transform.Find("PostCardContent").gameObject;
+            _postCardContentSection = _postcardScrollViewContent.transform.Find("PostContent").gameObject;
+            //_postCardContentSection = _postCardContentSection.transform.Find("Viewport").gameObject;
+            //_postCardContentSection = _postCardContentSection.transform.Find("Content").gameObject;
             _postcardAddPostButton = _postcardScrollViewContent.transform.Find("AddPostSection").gameObject;
             _postcardAddPostButton = _postcardAddPostButton.transform.Find("AddPostCard").gameObject;
             _makePostCartMenuCancel = makepostcardMenu.transform.Find("Trash").gameObject;
@@ -218,7 +221,7 @@ namespace SpatialNotes
                 Debug.Log("Middle Mouse Button Clicked");
             }
 
-            
+
 
             //set cursor to normal if in menu and if right click is not held
             if (IsInMenu && EventManager.GetString("CURSOR_NAME") != "NORMAL" && !Input.GetMouseButton((int)mouseButton.Right))
@@ -226,7 +229,7 @@ namespace SpatialNotes
                 EventManager.SetData("CURSOR_NAME", "NORMAL");
                 EventManager.EmitEvent("CURSOR_REFRESH");
                 return;
-                }
+            }
             else if (EventManager.GetString("CURSOR_NAME") != "CIRCLE" && Input.GetMouseButton((int)mouseButton.Right))
             {
                 EventManager.SetData("CURSOR_NAME", "CIRCLE");
@@ -256,7 +259,7 @@ namespace SpatialNotes
                     Debug.Log("Clicked on location pin: " + clickedPin.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text);
                     _selectedLocationInfo = clickedPin.GetComponent<PinID>().locationInfo;
                     _showSideMenuShowLocation(clickedPin);
-                    
+
                 }
                 else
                 {
@@ -446,6 +449,109 @@ namespace SpatialNotes
             _explorerActive = false;
         }
 
+        private void _openFileExplorerToLoadImages_PostContent(string uuid)
+        {
+            if (_explorerActive)
+            {
+                Debug.Log("Explorer already active");
+                TriggerPopup("Explorer already active", "Explorer Active", "xmark");
+                return;
+            }
+            //open in maps directory, if it exists, else create it
+            string path = Application.streamingAssetsPath + "/Maps";
+            if (!System.IO.Directory.Exists(path))
+            {
+                System.IO.Directory.CreateDirectory(path);
+            }
+
+            _setFileBrowserFilterImagesOnly();
+
+            // Show a save file dialog, await response from dialog
+            StartCoroutine(ShowLoadDialogCoroutineImagesOnly_PostContent(uuid));
+
+            return;
+        }
+
+        IEnumerator ShowLoadDialogCoroutineImagesOnly_PostContent(string uuid)
+        {
+            _explorerActive = true;
+            // Directories only
+            yield return FileBrowser.WaitForLoadDialog(SimpleFileBrowser.FileBrowser.PickMode.Files, true, _defaultPath, null, "Select Image", "Load");
+            if (FileBrowser.Success)
+            {
+                OnFolderSelectedLoadFileImages_PostContent(FileBrowser.Result, uuid);
+            }
+            else
+            {
+                _explorerActive = false;
+                try
+                {
+                    string[] error = FileBrowser.Result;
+                    string errorString = string.Join(", ", error);
+                    Debug.Log("Error: " + errorString);
+                    TriggerPopup("Error: " + errorString, "Error", "xmark");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log("Error: " + e.Message);
+
+                }
+            }
+            _explorerActive = false;
+        }
+
+        // Logs the paths of the selected files
+        void OnFolderSelectedLoadFileImages_PostContent(string[] paths, string uuid)
+        {
+            if (paths.Length == 0)
+            {
+                Debug.Log("No files were selected");
+                TriggerPopup("No files were selected", "No Files Selected", "xmark");
+                return;
+            }
+
+            // select only one 
+            string selectedPath = paths[0];
+
+            //move image file to map directory and change path to new path
+            string newImagePath = Application.streamingAssetsPath + map.mapAssetsPath + "/" + Path.GetFileName(selectedPath);
+            File.Copy(selectedPath, newImagePath, true);
+            
+            selectedPath = newImagePath;
+
+            //get postcard menu image from uuid
+            GameObject postcardImage = _makePostCartMenuContentHolder.transform.Find(uuid).gameObject;
+
+            //Try to load the image
+            Texture2D texture = new Texture2D(2, 2);
+            byte[] fileData;
+            if (File.Exists(selectedPath))
+            {
+                fileData = File.ReadAllBytes(selectedPath);
+                texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                postcardImage.transform.GetChild(0).GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            }
+            else
+            {
+                Debug.Log("File does not exist: " + selectedPath);
+                TriggerPopup("File does not exist: " + selectedPath, "File Not Found", "xmark");
+                _explorerActive = false;
+                return;
+            }
+
+            // get placeholder tmp_text
+            GameObject tmp_text = postcardImage.transform.Find("image_path").gameObject;
+            tmp_text.GetComponent<TMP_Text>().text = selectedPath;
+            //hide add image button
+            GameObject addImageButton = postcardImage.transform.Find("AddImage").gameObject.transform.Find("Upload").gameObject;
+            addImageButton.SetActive(false);
+
+
+            // Trigger popup
+            TriggerPopup(text: "Image " + Path.GetFileName(selectedPath) + " loaded", title: "Image Loaded", imageName: "checkmark");
+
+        }
+
         // Logs the paths of the selected files
         void OnFolderSelectedLoadFileImages(string[] paths)
         {
@@ -455,10 +561,6 @@ namespace SpatialNotes
                 TriggerPopup("No files were selected", "No Files Selected", "xmark");
                 return;
             }
-            //foreach (string path in paths)
-            //{
-            //    Debug.Log("Selected file: " + path);
-            //}
 
             // select only one 
             string selectedPath = paths[0];
@@ -570,7 +672,7 @@ namespace SpatialNotes
 
         private bool _getSideMenUIsActive()
         {
-            return sideMenuCreateLocation.activeInHierarchy || sideMenuEditLocation.activeInHierarchy || makepostcardMenu.activeInHierarchy;
+            return sideMenuCreateLocation.activeInHierarchy || sideMenuEditLocation.activeInHierarchy || makepostcardMenu.activeInHierarchy || sideMenuShowLocation.activeInHierarchy;
         }
 
         private void _hideSideMenu()
@@ -1020,11 +1122,18 @@ namespace SpatialNotes
         }
         private void _clearPostcardPosts()
         {
-            //clear the postcard menu
-            foreach (Transform child in _postCardContentSection.transform)
+            //clear the postcard menu in janky way by checking name length
+            if (_postcardScrollViewContent.transform.childCount > 7)
             {
-                child.gameObject.SetActive(false);
-                GameObject.Destroy(child.gameObject);
+                //if there are children named postcard, remove them
+                foreach (Transform child in _postcardScrollViewContent.transform)
+                {
+                    //janky way to detect uuid
+                    if (child.gameObject.name.Length > 18)
+                    {
+                        GameObject.Destroy(child.gameObject);
+                    }
+                }
             }
         }
 
@@ -1038,9 +1147,18 @@ namespace SpatialNotes
             //clear the postcard menu
             if (_selectedLocationInfo.postCard == null || _selectedLocationInfo.postCard.posts == null || _selectedLocationInfo.postCard.posts.Count == 0)
             {
-                if (_postCardContentSection.transform.childCount > 0)
+                if (_postcardScrollViewContent.transform.childCount > 7)
                 {
-                    _clearPostcardPosts();
+                    //if there are children named postcard, remove them
+                    foreach (Transform child in _postcardScrollViewContent.transform)
+                    {
+                        //janky way to detect uuid
+                        if (child.gameObject.name.Length > 18)
+                        {
+                           _clearPostcardMenu();
+                            GameObject.Destroy(child.gameObject);
+                        }
+                    }
                 }
             }
         }
@@ -1059,19 +1177,40 @@ namespace SpatialNotes
 
         public void SubmitPostcard()
         {
-                        string title = _makePostCartMenuTitle.GetComponent<TMP_InputField>().text;
+            //create temp postcard
+            TextMediaPost _tempPost = new TextMediaPost();
+            
+            string title = _makePostCartMenuTitle.GetComponent<TMP_InputField>().text;
             //update current postcard
             for (int i = 0; i < _currentTextMediaPost.mediaComponents.Count; i++)
             {
                 if (_currentTextMediaPost.mediaComponents[i].mediaType == "Text")
                 {
-                    TextComponent textComp = (TextComponent)_currentTextMediaPost.mediaComponents[i];
+                    TextComponent textComp = new TextComponent(_currentTextMediaPost.mediaComponents[i]);
                     GameObject textPostGameObject = GameObject.Find(textComp.uuid);
                     textComp.textContent = textPostGameObject.transform.GetChild(0).GetComponent<TMP_InputField>().text;
-                    Debug.Log("Text Content: " + textComp.textContent);
+                    _tempPost.mediaComponents.Add(textComp);
+
+
+                }
+                else if (_currentTextMediaPost.mediaComponents[i].mediaType == "Image")
+                {
+                    ImageComponent imgComp = new ImageComponent(_currentTextMediaPost.mediaComponents[i]);
+                    GameObject imgPostGameObject = GameObject.Find(imgComp.uuid);
+                    imgComp.mediaPath = imgPostGameObject.transform.GetChild(2).GetComponent<TMP_Text>().text;
+                    _tempPost.mediaComponents.Add(imgComp);
+
+                    
                 }
             }
             _currentTextMediaPost.title = title;
+            _tempPost.title = title;
+            if (_currentTextMediaPost.title == "")
+            {
+                _currentTextMediaPost.title = "No Title";
+            }
+            _currentTextMediaPost.updateDate(System.DateTime.Now);
+            _tempPost.updateDate(System.DateTime.Now);
 
 
             //get postcard that is selected
@@ -1089,22 +1228,28 @@ namespace SpatialNotes
             {
                 locInfo.postCard.date = System.DateTime.Now;
             }
-            locInfo.postCard.posts.Add(_currentTextMediaPost);
+            locInfo.postCard.posts.Add(_tempPost);
             //call for save to file
+            map.SaveAll();
             Debug.Log("Postcard submitted");
+            //Reset the new postcard
+            _currentTextMediaPost = new TextMediaPost();
 
             //clear the postcard menu
             _clearPostcardMenu();
             _hidePostcardMenu();
+            _removeAllPostsFromEdit();
 
             //call for update to postcard
-            //map.UpdateLocation(locInfo.coordinate, locInfo.locationName, locInfo.description, locInfo.imagePath, locInfo.postCard);
             _drawAndUpdateSideBarForLocation();
-            //_debugsmushtextToPostcard();
         }
 
         private void _drawAndUpdateSideBarForLocation()
         {
+            //Clear the postcard menu
+            _clearPostcardPosts();
+
+            
             //get the location info
             LocationInfo locInfo = _selectedLocationInfo;
             if (locInfo == null)
@@ -1153,43 +1298,75 @@ namespace SpatialNotes
 
             sideMenuShowLocation.SetActive(true);
 
-            //for each postcard in the location
+            //if there are postcards, draw them
             if (locInfo.postCard != null && locInfo.postCard.posts != null)
             {
+                //for each post in the postcard
+                Debug.Log("Drawing Postcard for location: " + locInfo.locationName + " with " + locInfo.postCard.posts.Count + " postcards");
                 foreach (TextMediaPost post in locInfo.postCard.posts)
                 {
-                    //create the postcard
-                    GameObject postcard = Instantiate(prefabPostCard, new Vector3(0, 0, 0), Quaternion.identity);
-                    postcard.transform.SetParent(_postCardContentSection.transform);
-                    postcard.transform.localScale = new Vector3(1, 1, 1);
-                    postcard.name = "PostCard";
-                    postcard.transform.localPosition = new Vector3(0, 0, 0);
+                    //WORKAROUND - create individual posts only, no postcards
 
-                    //populate the postcard
-                    postcard.transform.Find("Title").GetComponent<TextMeshProUGUI>().text = post.title;
-                    //postcard.transform.Find("Date").GetComponent<TextMeshProUGUI>().text = post.date.ToString("yyyy-MM-dd HH:mm:ss");
-
-                    //populate the postcard content
-                    GameObject postcardContent = postcard.transform.Find("Content").gameObject;
-                    for (int i = 0; i < post.mediaComponents.Count; i++)
+                    foreach (_postMediaComponent comp in post.mediaComponents)
                     {
-                        if (post.mediaComponents[i].mediaType == "Text")
+                        if (comp.mediaType == "Text")
                         {
-                            string text = ((TextComponent)post.mediaComponents[i]).textContent;
-
-                            //create the prefabbed text content
+                            TextComponent textComp = new TextComponent(comp);
+                            //create the text content
                             GameObject textPostGameObject = Instantiate(prefabTextPostSubmitted, new Vector3(0, 0, 0), Quaternion.identity);
-                            textPostGameObject.transform.SetParent(postcardContent.transform);
+                            textPostGameObject.name = textComp.uuid;
+                            textPostGameObject.transform.SetParent(_postcardScrollViewContent.transform);
                             textPostGameObject.transform.localScale = new Vector3(1, 1, 1);
-                            textPostGameObject.name = "TextPost" + i;
-                            textPostGameObject.transform.localPosition = new Vector3(0, 0, 0);
-                            
-                            //populate the text content
-                            textPostGameObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = text;
+                            GameObject posttxt = textPostGameObject.transform.GetChild(1).gameObject;
+                            string poststring = textComp.textContent.Trim();
+                            if (poststring.Length == 0 || poststring == "")
+                            {
+                                poststring = "No Description!";
+                            }
+                            posttxt.GetComponent<TextMeshProUGUI>().text = poststring;
 
+                            GameObject postdata = textPostGameObject.transform.GetChild(2).gameObject;
+                            string postdate = post.GetDate();
+                            postdata.GetComponent<TextMeshProUGUI>().text = "Posted on: " + postdate + " under: " + post.title;
+                            //assign remove component button
+                            GameObject rembutton = textPostGameObject.transform.GetChild(0).gameObject;
+                            //rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(textComp.uuid));
+                        }
+                        else if (comp.mediaType == "Image")
+                        {
+                            ImageComponent imageComp = new ImageComponent(comp);
+                            Debug.Log("Image Path: " + imageComp.mediaPath);
+                            //create the image content
+                            GameObject imagePostGameObject = Instantiate(prefabImagePostSubmitted, new Vector3(0, 0, 0), Quaternion.identity);
+                            imagePostGameObject.name = imageComp.uuid;
+                            imagePostGameObject.transform.SetParent(_postcardScrollViewContent.transform);
+                            imagePostGameObject.transform.localScale = new Vector3(1, 1, 1);
+                            GameObject postimg = imagePostGameObject.transform.GetChild(1).gameObject;
+                            //posttxt.GetComponent<TextMeshProUGUI>().text = "Image";
+                            GameObject postdata = imagePostGameObject.transform.GetChild(3).gameObject;
+                            string postdate = post.GetDate();
+                            postdata.GetComponent<TextMeshProUGUI>().text = "Posted on: " + postdate + " under: " + post.title;
+
+                            //Try to load the image
+                            Texture2D texture = new Texture2D(2, 2);
+                            byte[] fileData;
+                            if (File.Exists(imageComp.mediaPath))
+                            {
+                                fileData = File.ReadAllBytes(imageComp.mediaPath);
+                                texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                                postimg.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                            }
+                            else
+                            {
+                                Debug.Log("File does not exist: " + imageComp.mediaPath);
+                                TriggerPopup("File does not exist: " + imageComp.mediaPath, "File Not Found", "xmark");
+                            }
+
+                            //assign remove component button
+                            GameObject rembutton = imagePostGameObject.transform.GetChild(4).gameObject;
+                            //rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(imageComp.uuid));
                         }
                     }
-
 
                 }
 
@@ -1198,7 +1375,9 @@ namespace SpatialNotes
 
             //trigger layout rebuild
             Debug.Log("Rebuilding Layout for Postcard");
-            LayoutRebuilder.ForceRebuildLayoutImmediate(_postCardContentSection.GetComponent<RectTransform>());
+            _postcardScrollViewContent.GetComponent<RectTransform>().sizeDelta = new Vector2(0, 0);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_postcardScrollViewContent.GetComponent<RectTransform>());
+
         }
 
         public void AddImageContent()
@@ -1224,8 +1403,8 @@ namespace SpatialNotes
 
             //Add image logic to the image content
             // need to write a new function for this
-            // GameObject uploadButton = imagePostGameObject.transform.Find("AddImage").gameObject.transform.Find("Upload").gameObject;
-            // uploadButton.GetComponent<Button>().onClick.AddListener(() => _openFileExplorerToLoadImages());
+            GameObject uploadButton = imagePostGameObject.transform.Find("AddImage").gameObject.transform.Find("Upload").gameObject;
+            uploadButton.GetComponent<Button>().onClick.AddListener(() => _openFileExplorerToLoadImages_PostContent(uuid));
 
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(_makePostCartMenuContentHolder.GetComponent<RectTransform>());
@@ -1269,6 +1448,15 @@ namespace SpatialNotes
 
             //trigger layout rebuild
             LayoutRebuilder.ForceRebuildLayoutImmediate(_postcardScrollViewContent.GetComponent<RectTransform>());
+        }
+        private void _removeAllPostsFromEdit()
+        {
+            //clear the postcard menu
+            foreach (Transform child in _makePostCartMenuContentHolder.transform)
+            {
+                child.gameObject.SetActive(false);
+                GameObject.Destroy(child.gameObject);
+            }
         }
         private void _debugsmushtextToPostcard()
         {
