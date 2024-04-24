@@ -1096,6 +1096,7 @@ namespace SpatialNotes
             //clear the postcard menu
             _clearPostcardMenu();
             _hidePostcardMenu();
+            _removeAllPostsFromEdit();
 
             //call for update to postcard
             //map.UpdateLocation(locInfo.coordinate, locInfo.locationName, locInfo.description, locInfo.imagePath, locInfo.postCard);
@@ -1269,6 +1270,15 @@ namespace SpatialNotes
 
             //trigger layout rebuild
             LayoutRebuilder.ForceRebuildLayoutImmediate(_postcardScrollViewContent.GetComponent<RectTransform>());
+        }
+        private void _removeAllPostsFromEdit()
+        {
+            //clear the postcard menu
+            foreach (Transform child in _makePostCartMenuContentHolder.transform)
+            {
+                child.gameObject.SetActive(false);
+                GameObject.Destroy(child.gameObject);
+            }
         }
         private void _debugsmushtextToPostcard()
         {
