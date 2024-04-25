@@ -100,20 +100,22 @@ namespace SpatialNotes
         public GameObject prefabTextPostSubmitted;
         public GameObject prefabImagePostSubmitted;
 
+        public enum SortMode { Date, Name, Location };
+        public SortMode _currentSortMode = SortMode.Date;
+
 
         // ----------------- Methods -----------------
         void Start()
         {
             createButton.onClick.AddListener(addButtonClick);
             map = main.map;
-            map.DisplayMapInfo();
+            //map.DisplayMapInfo();
 
             //get canvas
             staticCanvas = GameObject.Find("StaticCanvas");
             mapCanvas = GameObject.Find("MapCanvas");
             if (mapCanvas == null)
             {
-                Debug.Log("MapCanvas not found");
                 return;
             }
             // Get the map image
@@ -146,8 +148,6 @@ namespace SpatialNotes
             _postcardScrollViewContent = postcardScrollView.transform.Find("Viewport").gameObject;
             _postcardScrollViewContent = _postcardScrollViewContent.transform.Find("Content").gameObject;
             _postCardContentSection = _postcardScrollViewContent.transform.Find("PostContent").gameObject;
-            //_postCardContentSection = _postCardContentSection.transform.Find("Viewport").gameObject;
-            //_postCardContentSection = _postCardContentSection.transform.Find("Content").gameObject;
             _postcardAddPostButton = _postcardScrollViewContent.transform.Find("AddPostSection").gameObject;
             _postcardAddPostButton = _postcardAddPostButton.transform.Find("AddPostCard").gameObject;
             _makePostCartMenuCancel = makepostcardMenu.transform.Find("Trash").gameObject;
@@ -173,10 +173,16 @@ namespace SpatialNotes
             _makePostCartMenuAddTextContent.GetComponent<Button>().onClick.AddListener(AddTextContent);
             _makePostCartMenuAddImageContent.GetComponent<Button>().onClick.AddListener(AddImageContent);
 
+            //Add dropdown sortmode listener
+            GameObject sortModeDropdown = _postcardScrollViewContent.transform.Find("AddPostSection").gameObject;
+            sortModeDropdown = sortModeDropdown.transform.Find("Dropdown").gameObject;
+            sortModeDropdown.GetComponent<TMP_Dropdown>().onValueChanged.AddListener(delegate { ChangeSortModeDropdown(sortModeDropdown.GetComponent<TMP_Dropdown>()); });
+
+
+
 
 
             // Hide the side menu
-
             showMorePanel.SetActive(false);
 
             _removeAllPins(pinsFolder);
@@ -184,8 +190,6 @@ namespace SpatialNotes
 
             //load locations
             OnStartLoadLocations();
-
-            Debug.Log("MapInteract Start");
         }
 
         void Update()
@@ -218,7 +222,6 @@ namespace SpatialNotes
                 _hideSideMenu();
                 EventManager.SetData("CURSOR_NAME", "NORMAL");
                 EventManager.EmitEvent("CURSOR_REFRESH");
-                Debug.Log("Middle Mouse Button Clicked");
             }
 
 
@@ -256,18 +259,14 @@ namespace SpatialNotes
                 GameObject clickedPin = checkIfLocationPinClicked(worldClickPos);
                 if (clickedPin != null)
                 {
-                    Debug.Log("Clicked on location pin: " + clickedPin.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text);
                     _selectedLocationInfo = clickedPin.GetComponent<PinID>().locationInfo;
                     _showSideMenuShowLocation(clickedPin);
 
                 }
                 else
                 {
-                    Debug.Log("Clicked on empty space");
-
                     GameObject pin = Instantiate(pinPrefab, new Vector3(worldClickPos.x, worldClickPos.y, 1), Quaternion.identity);
                     pin.transform.SetParent(pinsFolder.transform);
-                    //pin.transform.position = new Vector3(worldClickPos.x, worldClickPos.y, 1);
                     //Populate pin name
                     GameObject pinName = pin.transform.Find("PinName").gameObject;
                     pinName.GetComponent<TextMeshProUGUI>().text = "Selected Location";
@@ -313,7 +312,6 @@ namespace SpatialNotes
 
                 Vector3 pos = Camera.main.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
                 float zoomAdjustedPanSpeed = Mathf.Clamp((float)(panSpeed * (1 - currentZoom / maxZoom)), 0.15f * panSpeed, 2.0f * panSpeed);
-                //Debug.Log("Pan Speed: " + zoomAdjustedPanSpeed + " " + panSpeed + " " + maxZoom + " " + currentZoom + " " + (maxZoom - currentZoom / maxZoom));
                 Vector3 move = new Vector3(pos.x * 100 * zoomAdjustedPanSpeed, pos.y * 100 * zoomAdjustedPanSpeed, 0);
                 if (dragChange == null || move != dragChange)
                 {
@@ -334,14 +332,12 @@ namespace SpatialNotes
         public void OnStartLoadLocations()
         {
             // Get all locations from the database
-            Debug.Log("Exists; map: " + map.GetNumberOfLocations());
             Dictionary<string, LocationInfo> locations = map.GetLocations();
 
             foreach (KeyValuePair<string, LocationInfo> loc in locations)
             {
                 //add pin to the map
                 Vector3 coord = map._convertCoordStr2Vec3(loc.Key);
-                //Debug.Log("Adding pin to the map for location: " + loc.Value.locationName + "at location: " + coord);
                 GameObject pin = Instantiate(pinPrefab, new Vector3(coord.x, coord.y, 1), Quaternion.identity);
                 pin.transform.SetParent(locationPinsFolder.transform);
 
@@ -354,7 +350,6 @@ namespace SpatialNotes
                 PinID id = pin.GetComponent<PinID>();
                 id.locationInfo = loc.Value;
                 id.type = "Location";
-                Debug.Log("Location info: " + loc.Value.locationName + " " + loc.Value.description + " " + loc.Value.coordinate + " " + loc.Value.imagePath);
 
                 //pins of locations are green
                 pin.GetComponent<Image>().color = Color.green;
@@ -379,7 +374,6 @@ namespace SpatialNotes
         {
             if (_explorerActive)
             {
-                Debug.Log("Explorer already active");
                 TriggerPopup("Explorer already active", "Explorer Active", "xmark");
                 return;
             }
@@ -437,13 +431,11 @@ namespace SpatialNotes
                 {
                     string[] error = FileBrowser.Result;
                     string errorString = string.Join(", ", error);
-                    Debug.Log("Error: " + errorString);
                     TriggerPopup("Error: " + errorString, "Error", "xmark");
                 }
                 catch (System.Exception e)
                 {
                     Debug.Log("Error: " + e.Message);
-
                 }
             }
             _explorerActive = false;
@@ -453,7 +445,6 @@ namespace SpatialNotes
         {
             if (_explorerActive)
             {
-                Debug.Log("Explorer already active");
                 TriggerPopup("Explorer already active", "Explorer Active", "xmark");
                 return;
             }
@@ -488,7 +479,6 @@ namespace SpatialNotes
                 {
                     string[] error = FileBrowser.Result;
                     string errorString = string.Join(", ", error);
-                    Debug.Log("Error: " + errorString);
                     TriggerPopup("Error: " + errorString, "Error", "xmark");
                 }
                 catch (System.Exception e)
@@ -505,7 +495,6 @@ namespace SpatialNotes
         {
             if (paths.Length == 0)
             {
-                Debug.Log("No files were selected");
                 TriggerPopup("No files were selected", "No Files Selected", "xmark");
                 return;
             }
@@ -516,7 +505,7 @@ namespace SpatialNotes
             //move image file to map directory and change path to new path
             string newImagePath = Application.streamingAssetsPath + map.mapAssetsPath + "/" + Path.GetFileName(selectedPath);
             File.Copy(selectedPath, newImagePath, true);
-            
+
             selectedPath = newImagePath;
 
             //get postcard menu image from uuid
@@ -533,11 +522,16 @@ namespace SpatialNotes
             }
             else
             {
-                Debug.Log("File does not exist: " + selectedPath);
                 TriggerPopup("File does not exist: " + selectedPath, "File Not Found", "xmark");
                 _explorerActive = false;
                 return;
             }
+
+            //cut path to only be after the streaming assets path
+            selectedPath = selectedPath.Replace(Application.streamingAssetsPath, "");
+
+
+
 
             // get placeholder tmp_text
             GameObject tmp_text = postcardImage.transform.Find("image_path").gameObject;
@@ -557,7 +551,6 @@ namespace SpatialNotes
         {
             if (paths.Length == 0)
             {
-                Debug.Log("No files were selected");
                 TriggerPopup("No files were selected", "No Files Selected", "xmark");
                 return;
             }
@@ -572,9 +565,6 @@ namespace SpatialNotes
             selectedPath = newImagePath;
 
 
-
-
-
             //Try to load the image
             Texture2D texture = new Texture2D(2, 2);
             byte[] fileData;
@@ -587,7 +577,6 @@ namespace SpatialNotes
             }
             else
             {
-                Debug.Log("File does not exist: " + selectedPath);
                 TriggerPopup("File does not exist: " + selectedPath, "File Not Found", "xmark");
                 _explorerActive = false;
                 return;
@@ -599,7 +588,6 @@ namespace SpatialNotes
 
 
 
-
             // Trigger popup
             TriggerPopup(text: "Image " + Path.GetFileName(selectedPath) + " loaded", title: "Image Loaded", imageName: "checkmark");
 
@@ -608,22 +596,17 @@ namespace SpatialNotes
 
         public void LocationAdd()
         {
-            Debug.Log("Location Added");
             Vector3 coord = _getWorldClickPosition(lastSelectedLocation);
             string locationName = sideMenuCreateLocationNameField.GetComponent<TMP_InputField>().text;
             string locationDescription = sideMenuCreateLocationDescriptionField.GetComponent<TMP_InputField>().text;
-            Debug.Log(savedUiPosOnClick + " " + coord + " " + locationName + " " + locationDescription);
 
             string locationImagePath = "";
             if (_pathToImageBeingCreated != "")
             {
                 locationImagePath = _pathToImageBeingCreated;
             }
-            Debug.Log("Location Image Path: " + locationImagePath);
-            //
             //Add location to the database
             map.AddLocation(locCoord: coord, locName: locationName, locDescription: locationDescription, locImagePath: locationImagePath);
-            Debug.Log("Location Added to the database, new location count: " + map.GetNumberOfLocations());
 
             //add pin to the map
             GameObject pin = Instantiate(pinPrefab, new Vector3(coord.x, coord.y, 1), Quaternion.identity);
@@ -725,45 +708,6 @@ namespace SpatialNotes
         }
 
 
-        private void _debugShowNearbyPinsToClick(Vector2 worldpos)
-        {
-            float distThreshold = 3.5f / ZoomLevel;
-            // Get all pins
-            List<GameObject> pins = new List<GameObject>();
-            List<Vector3> pinPositions = new List<Vector3>();
-            foreach (Transform child in pinsFolder.transform)
-            {
-                pins.Add(child.gameObject);
-                pinPositions.Add(child.position);
-            }
-            List<GameObject> locationPins = new List<GameObject>();
-            List<Vector3> locationPinPositions = new List<Vector3>();
-            foreach (Transform child in locationPinsFolder.transform)
-            {
-                locationPins.Add(child.gameObject);
-                locationPinPositions.Add(child.position);
-            }
-            // Get the distance to each pin
-            for (int i = 0; i < pins.Count; i++)
-            {
-                float distance = Vector3.Distance(worldpos, pinPositions[i]);
-                Debug.Log("Distance to pin " + i + " is " + distance + ", this is within the threshold: " + (distance < distThreshold) + " threshold: " + distThreshold);
-            }
-            for (int i = 0; i < locationPins.Count; i++)
-            {
-                float distance = Vector3.Distance(worldpos, locationPinPositions[i]);
-                Debug.Log("Distance to location pin " + i + " is " + distance + ", this is within the threshold: " + (distance < distThreshold) + " threshold: " + distThreshold + "(name: " + locationPins[i].transform.Find("PinName").GetComponent<TextMeshProUGUI>().text + ")");
-            }
-
-            GameObject closestPin = _getClosestLocationToThreshold(worldpos, distThreshold);
-            if (closestPin != null)
-            {
-                Debug.Log("Closest pin to click is: " + closestPin.transform.Find("PinName").GetComponent<TextMeshProUGUI>().text);
-            }
-
-
-        }
-
         private void _zoomIn()
         {
             // Zoom camera in 
@@ -801,8 +745,6 @@ namespace SpatialNotes
         {
             //adjust for camera offset
             lastCandidateUiPos.z = Mathf.Abs(cam.transform.position.z);
-            //lastCandidateUiPos.x = lastCandidateUiPos.x;
-            //lastCandidateUiPos.y = lastCandidateUiPos.y;
 
             return cam.ScreenToWorldPoint(lastCandidateUiPos);
         }
@@ -818,15 +760,6 @@ namespace SpatialNotes
             return new Vector4(topLeft.x, topLeft.y, bottomRight.x, bottomRight.y);
         }
 
-        private Vector2 _calcCenterpoint(Vector4 visibleDims)
-        {
-            return new Vector2((visibleDims.z - visibleDims.x) / 2, (visibleDims.w - visibleDims.y) / 2);
-        }
-
-        private Vector2 _calcVisibleSize(Vector4 visibleDims)
-        {
-            return new Vector2(visibleDims.z - visibleDims.x, visibleDims.w - visibleDims.y);
-        }
 
         private void _showSideMenuNoSelection()
         {
@@ -861,7 +794,6 @@ namespace SpatialNotes
             _drawAndUpdateSideBarForLocation();
 
 
-
             //Set text to the location
             LocationInfo locInfo = locationPin.GetComponent<PinID>().locationInfo;
             TextMeshProUGUI locationText = sideMenuShowLocationContent.transform.Find("LocationText").GetComponent<TextMeshProUGUI>();
@@ -873,27 +805,19 @@ namespace SpatialNotes
 
             //show image if it exists else show placeholder
             GameObject displayIMG = sideMenuShowLocationContent.transform.Find("LocationImage").gameObject;
-            if (locInfo.imagePath != "" && locInfo.imagePath != null)
+            string imagePath = _getPathTry(locInfo.imagePath);
+            Texture2D texture = new Texture2D(2, 2);
+            byte[] fileData;
+            if (imagePath != "")
             {
-                Texture2D texture = new Texture2D(2, 2);
-                byte[] fileData;
-                if (File.Exists(locInfo.imagePath))
-                {
-                    fileData = File.ReadAllBytes(locInfo.imagePath);
-                    texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
-                    displayIMG.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                }
-                else
-                {
-                    Debug.Log("File does not exist: " + locInfo.imagePath);
-                    TriggerPopup("File does not exist: " + locInfo.imagePath, "File Not Found", "xmark");
-                }
+                fileData = File.ReadAllBytes(imagePath);
+                texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                displayIMG.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
             }
             else
             {
                 displayIMG.GetComponent<UnityEngine.UI.Image>().sprite = placeholderImage;
             }
-
             sideMenuShowLocation.SetActive(true);
         }
 
@@ -934,9 +858,7 @@ namespace SpatialNotes
 
         void addButtonClick()
         {
-            Debug.Log("Button Clicked");
             _showSideMenuCreateLocation();
-            //addLocationCanvas.enabled = true;
         }
 
         // Wrapper trigger popup
@@ -946,6 +868,80 @@ namespace SpatialNotes
             EventManager.SetData("MODEL_POPUP_TITLE", title);
             EventManager.SetData("MODEL_POPUP_IMAGE", imageName);
             EventManager.EmitEvent(eventName: "MODEL_POPUP", delay: 0, sender: gameObject);
+            Debug.Log("Popup Triggered with text: " + text + " title: " + title + " imageName: " + imageName);
+        }
+
+        private string _getPathTry(string path)
+        {
+            Debug.Log("Path: " + path);
+            if (path == "" || path == null || path == "placeholder to hold image path")
+            {
+                return "";
+            }
+            //len
+            if (path.Length < 5)
+            {
+                TriggerPopup("File does not exist: " + path, "File Not Found", "xmark");
+                return "";
+            }
+            //check if the path exists
+            bool exists = File.Exists(path);
+            if (exists)
+            {
+                return path;
+            }
+
+            //if it begins with /Maps, append the streaming assets path
+            if (path.Substring(0, 5) == "/Maps")
+            {
+                path = Application.streamingAssetsPath + path;
+                exists = File.Exists(path);
+                if (exists)
+                {
+                    return path;
+                }
+            }
+
+            //try to cut the path and see if it exists to only after the streaming assets path
+            string newPath = path.Replace(Application.streamingAssetsPath, "");
+            exists = File.Exists(newPath);
+            if (exists)
+            {
+                return Application.streamingAssetsPath + "/" + newPath;
+            }
+
+            //try to find the streamingassets path fragment to correct for it being an absolute path
+            //if path length is less than 5, it is not a valid path
+            if (path.Length < 5)
+            {
+                //TriggerPopup("File does not exist: " + path, "File Not Found", "xmark");
+                return "";
+            }
+            string[] pathParts = path.Split('/');
+            string newPath2 = "";
+            bool found = false;
+            for (int i = 0; i < pathParts.Length; i++)
+            {
+                if (found)
+                {
+                    newPath2 += pathParts[i] + "/";
+                }
+                if (pathParts[i] == "StreamingAssets")
+                {
+                    found = true;
+                }
+            }
+            newPath2 = newPath2.Substring(0, newPath2.Length - 1);
+            newPath2 = Application.streamingAssetsPath + "/" + newPath2;
+            exists = File.Exists(newPath2);
+            if (exists)
+            {
+                return newPath2;
+            }
+
+            //throw an error
+            TriggerPopup("File does not exist: " + path, "File Not Found", "xmark");
+            return "";
         }
 
 
@@ -953,7 +949,6 @@ namespace SpatialNotes
         Side Menu Functions
         */
 
-        // Start is called before the first frame update
 
         public void Toggle()
         {
@@ -978,7 +973,6 @@ namespace SpatialNotes
         public void EditLocation()
         {
             // show the edit location menu
-            Debug.Log("Edit Location");
             _HideAllSideMenuBranches();
             sideMenuEditLocation.SetActive(true);
 
@@ -991,21 +985,14 @@ namespace SpatialNotes
             // fill in the fields
             nameField.GetComponent<TMP_InputField>().text = _selectedLocationInfo.locationName;
             descriptionField.GetComponent<TMP_InputField>().text = _selectedLocationInfo.description;
-            if (_selectedLocationInfo.imagePath != "" && _selectedLocationInfo.imagePath != null)
+            string imagePath = _getPathTry(_selectedLocationInfo.imagePath);
+            Texture2D texture = new Texture2D(2, 2);
+            byte[] fileData;
+            if (imagePath != "")
             {
-                Texture2D texture = new Texture2D(2, 2);
-                byte[] fileData;
-                if (File.Exists(_selectedLocationInfo.imagePath))
-                {
-                    fileData = File.ReadAllBytes(_selectedLocationInfo.imagePath);
-                    texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
-                    imageField.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                }
-                else
-                {
-                    Debug.Log("File does not exist: " + _selectedLocationInfo.imagePath);
-                    TriggerPopup("File does not exist: " + _selectedLocationInfo.imagePath, "File Not Found", "xmark");
-                }
+                fileData = File.ReadAllBytes(imagePath);
+                texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                imageField.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
             }
             else
             {
@@ -1024,7 +1011,6 @@ namespace SpatialNotes
 
         public void SubmitEditLocation()
         {
-            Debug.Log("Submit Edit Location");
             // get the fields
             GameObject nameField = sideMenuEditLocation.transform.Find("Name").gameObject;
             GameObject descriptionField = sideMenuEditLocation.transform.Find("Description").gameObject;
@@ -1037,13 +1023,11 @@ namespace SpatialNotes
             if (_pathToImageBeingCreated != "")
             {
                 locationImagePath = _pathToImageBeingCreated;
-                Debug.Log("New Image Path: " + locationImagePath);
             }
 
 
             // update the location
             map.UpdateLocation(_selectedLocationInfo.coordinate, locationName, locationDescription, locationImagePath);
-            Debug.Log("Location Updated");
 
             // update the pin
             foreach (Transform child in locationPinsFolder.transform)
@@ -1085,7 +1069,6 @@ namespace SpatialNotes
 
         public void CancelEditLocation()
         {
-            Debug.Log("Cancel Edit Location");
             //hide show more panel
             CloseSideExistingMenu();
             _HideAllSideMenuBranches();
@@ -1106,15 +1089,12 @@ namespace SpatialNotes
 
         public void OpenPostcardMenu()
         {
-            Debug.Log("Open Postcard Menu");
             _showPostcardMenu();
             _drawAndUpdateSideBarForLocation();
         }
 
         public void ClosepostcardMenu()
         {
-            Debug.Log("Close Postcard Menu");
-
             _clearPostcardMenu();
             _clearPostcardPosts();
             _hidePostcardMenu();
@@ -1155,7 +1135,7 @@ namespace SpatialNotes
                         //janky way to detect uuid
                         if (child.gameObject.name.Length > 18)
                         {
-                           _clearPostcardMenu();
+                            _clearPostcardMenu();
                             GameObject.Destroy(child.gameObject);
                         }
                     }
@@ -1179,7 +1159,7 @@ namespace SpatialNotes
         {
             //create temp postcard
             TextMediaPost _tempPost = new TextMediaPost();
-            
+
             string title = _makePostCartMenuTitle.GetComponent<TMP_InputField>().text;
             //update current postcard
             for (int i = 0; i < _currentTextMediaPost.mediaComponents.Count; i++)
@@ -1201,7 +1181,7 @@ namespace SpatialNotes
                     _tempPost.mediaComponents.Add(imgComp);
                 }
             }
-            
+
             _currentTextMediaPost.title = title;
             _tempPost.title = title;
             if (_currentTextMediaPost.title == "")
@@ -1216,7 +1196,6 @@ namespace SpatialNotes
             LocationInfo locInfo = _selectedLocationInfo;
             if (locInfo == null)
             {
-                Debug.Log("No location selected");
                 return;
             }
             if (locInfo.postCard == null || locInfo.postCard.posts == null || locInfo.postCard.posts.Count == 0)
@@ -1230,7 +1209,6 @@ namespace SpatialNotes
             locInfo.postCard.posts.Add(_tempPost);
             //call for save to file
             map.SaveAll();
-            Debug.Log("Postcard submitted");
             //Reset the new postcard
             _currentTextMediaPost = new TextMediaPost();
 
@@ -1247,20 +1225,17 @@ namespace SpatialNotes
         {
             //Clear the postcard menu
             _clearPostcardPosts();
-            
+
             //get the location info
             LocationInfo locInfo = _selectedLocationInfo;
             if (locInfo == null)
             {
-                Debug.Log("No location selected");
                 return;
             }
             if (locInfo.postCard == null || locInfo.postCard.posts == null || locInfo.postCard.posts.Count == 0)
             {
-                Debug.Log("No postcards for location");
                 return;
             }
-            Debug.Log("Drawing Postcard for location: " + locInfo.locationName + " with " + locInfo.postCard.posts.Count + " postcards");
 
             //populate the side bar
             //Set text to the location
@@ -1273,21 +1248,14 @@ namespace SpatialNotes
 
             //show image if it exists else show placeholder
             GameObject displayIMG = sideMenuShowLocationContent.transform.Find("LocationImage").gameObject;
-            if (locInfo.imagePath != "" && locInfo.imagePath != null)
+            string imagePath = _getPathTry(locInfo.imagePath);
+            Texture2D texture = new Texture2D(2, 2);
+            byte[] fileData;
+            if (imagePath != "")
             {
-                Texture2D texture = new Texture2D(2, 2);
-                byte[] fileData;
-                if (File.Exists(locInfo.imagePath))
-                {
-                    fileData = File.ReadAllBytes(locInfo.imagePath);
-                    texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
-                    displayIMG.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                }
-                else
-                {
-                    Debug.Log("File does not exist: " + locInfo.imagePath);
-                    TriggerPopup("File does not exist: " + locInfo.imagePath, "File Not Found", "xmark");
-                }
+                fileData = File.ReadAllBytes(imagePath);
+                texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
+                displayIMG.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
             }
             else
             {
@@ -1296,11 +1264,24 @@ namespace SpatialNotes
 
             sideMenuShowLocation.SetActive(true);
 
+            //Sort the posts by sortmode
+            if (_currentSortMode == SortMode.Date)
+            {
+                locInfo.postCard.posts.Sort((x, y) => System.DateTime.Compare(System.DateTime.Parse(x.GetDate()), System.DateTime.Parse(y.GetDate())));
+            }
+            else if (_currentSortMode == SortMode.Location)
+            {
+                locInfo.postCard.posts.Sort((x, y) => string.Compare(x.title, y.title));
+            }
+            else if (_currentSortMode == SortMode.Name)
+            {
+                locInfo.postCard.posts.Sort((x, y) => string.Compare(x.title, y.title));
+            }
+
             //if there are postcards, draw them
             if (locInfo.postCard != null && locInfo.postCard.posts != null)
             {
                 //for each post in the postcard
-                Debug.Log("Drawing Postcard for location: " + locInfo.locationName + " with " + locInfo.postCard.posts.Count + " postcards");
                 foreach (TextMediaPost post in locInfo.postCard.posts)
                 {
                     //WORKAROUND - create individual posts only, no postcards
@@ -1315,10 +1296,9 @@ namespace SpatialNotes
                             textPostGameObject.name = textComp.uuid;
                             textPostGameObject.transform.SetParent(_postcardScrollViewContent.transform);
                             textPostGameObject.transform.localScale = new Vector3(1, 1, 1);
-                            //GameObject posttxt = textPostGameObject.transform.GetChild(1).gameObject;
                             GameObject posttxt = textPostGameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject;
                             //posttxt contains a TextMeshPro Text UI element. Change the text to the post content
-                            
+
 
                             string poststring = textComp.textContent.Trim();
                             if (poststring.Length == 0 || poststring == "")
@@ -1337,12 +1317,15 @@ namespace SpatialNotes
 
                             //assign remove component button
                             GameObject rembutton = textPostGameObject.transform.Find("DelButton").gameObject;
-                            rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(textComp.uuid));
+                            rembutton.GetComponent<Button>().onClick.AddListener(() => _removeSubmittedPostComponent(textComp.uuid));
+
+                            ////assign edit component button
+                            //GameObject editbutton = textPostGameObject.transform.Find("Edit").gameObject;
+                            //editbutton.GetComponent<Button>().onClick.AddListener(() => _initEditSubmittedPostcard(textComp.uuid));
                         }
                         else if (comp.mediaType == "Image")
                         {
                             ImageComponent imageComp = new ImageComponent(comp);
-                            Debug.Log("Image Path: " + imageComp.mediaPath);
                             //create the image content
                             GameObject imagePostGameObject = Instantiate(prefabImagePostSubmitted, new Vector3(0, 0, 0), Quaternion.identity);
                             imagePostGameObject.name = imageComp.uuid;
@@ -1358,39 +1341,47 @@ namespace SpatialNotes
                             dateText.GetComponent<TextMeshProUGUI>().text = "Posted on: " + postdate;
 
                             //Try to load the image
-                            Texture2D texture = new Texture2D(2, 2);
-                            byte[] fileData;
-                            if (File.Exists(imageComp.mediaPath))
+                            string imagePath_corrected = _getPathTry(imageComp.mediaPath);
+                            Texture2D texture_corrected = new Texture2D(2, 2);
+                            byte[] fileData_corrected;
+                            if (imagePath_corrected != "")
                             {
-                                fileData = File.ReadAllBytes(imageComp.mediaPath);
-                                texture.LoadImage(fileData); //..this will auto-resize the texture dimensions.
-                                postimg.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                                fileData_corrected = File.ReadAllBytes(imagePath_corrected);
+                                texture_corrected.LoadImage(fileData_corrected); //..this will auto-resize the texture dimensions.
+                                postimg.GetComponent<UnityEngine.UI.Image>().sprite = Sprite.Create(texture_corrected, new Rect(0, 0, texture_corrected.width, texture_corrected.height), new Vector2(0.5f, 0.5f));
                             }
                             else
                             {
-                                Debug.Log("File does not exist: " + imageComp.mediaPath);
-                                TriggerPopup("File does not exist: " + imageComp.mediaPath, "File Not Found", "xmark");
+                                postimg.GetComponent<UnityEngine.UI.Image>().sprite = placeholderImage;
                             }
 
                             //assign remove component button
-                            GameObject rembutton = imagePostGameObject.transform.GetChild(4).gameObject;
-                            //rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(imageComp.uuid));
+                            GameObject rembutton = imagePostGameObject.transform.GetChild(5).gameObject;
+                            rembutton.GetComponent<Button>().onClick.AddListener(() => _removeSubmittedPostComponent(imageComp.uuid));
                         }
                     }
                 }
 
+
+
+
+
                 //Create an empty object with no prefab
-                GameObject emptyPost = new GameObject();
-                emptyPost.transform.SetParent(_postcardScrollViewContent.transform);
-                emptyPost.transform.localScale = new Vector3(1, 1, 1);
-                emptyPost.AddComponent<RectTransform>();
-                emptyPost.GetComponent<RectTransform>().sizeDelta = new Vector2(0, 0);
-                emptyPost.name = "Iamconformingtoyourjankyways:v";
+                //if no footer exists
+                if (_postcardScrollViewContent.transform.Find("Padding") == null)
+                {
+                    GameObject emptyPost = new GameObject();
+                    emptyPost.transform.SetParent(_postcardScrollViewContent.transform);
+                    emptyPost.transform.localScale = new Vector3(1, 1, 1);
+                    emptyPost.AddComponent<RectTransform>();
+                    emptyPost.GetComponent<RectTransform>().sizeDelta = new Vector2(0, 0);
+                    emptyPost.name = "Padding";
+
+                }
 
             }
 
             //trigger layout rebuild
-            Debug.Log("Rebuilding Layout for Postcard");
             _postcardScrollViewContent.GetComponent<RectTransform>().sizeDelta = new Vector2(0, 0);
             LayoutRebuilder.ForceRebuildLayoutImmediate(_postcardScrollViewContent.GetComponent<RectTransform>());
 
@@ -1398,7 +1389,6 @@ namespace SpatialNotes
 
         public void AddImageContent()
         {
-            Debug.Log("Add Image Content");
             //create code datastructure for image content
             ImageComponent imagePost = new ImageComponent();
             imagePost.mediaType = "Image";
@@ -1428,7 +1418,6 @@ namespace SpatialNotes
 
         public void AddTextContent()
         {
-            Debug.Log("Add Text Content");
             //create code datastructure for text content
             TextComponent textPost = new TextComponent();
             textPost.mediaType = "Text";
@@ -1460,9 +1449,92 @@ namespace SpatialNotes
             //remove the component from the view
             Destroy(component);
 
+            //call for save to file
+            map.SaveAll();
+
             //trigger layout rebuild
             LayoutRebuilder.ForceRebuildLayoutImmediate(_postcardScrollViewContent.GetComponent<RectTransform>());
         }
+
+        private void _removeSubmittedPostComponent(string uuid)
+        {
+            GameObject component = GameObject.Find(uuid); //get the component
+            //get location info
+            LocationInfo locInfo = _selectedLocationInfo;
+            if (locInfo == null)
+            {
+                return;
+            }
+            if (locInfo.postCard == null || locInfo.postCard.posts == null || locInfo.postCard.posts.Count == 0)
+            {
+                return;
+            }
+            //get posts array
+            List<TextMediaPost> posts = locInfo.postCard.posts;
+            //remove the component from the postcard
+            foreach (TextMediaPost post in posts)
+            {
+                foreach (_postMediaComponent comp in post.mediaComponents)
+                {
+                    if (comp.uuid == uuid)
+                    {
+                        post.mediaComponents.Remove(comp);
+                        break;
+                    }
+                }
+            }
+            //reupdate the location info
+            locInfo.postCard.posts = posts;
+            //call for save to file
+            map.SaveAll();
+            //remove the component from the view
+            Destroy(component);
+
+            //trigger layout rebuild
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_postcardScrollViewContent.GetComponent<RectTransform>());
+        }
+
+        //private void _initEditSubmittedPostcard(string uuid)
+        //{
+        //    //get single text post and attributes
+        //    TextMediaPost post = _selectedLocationInfo.postCard.posts.Find(x => x.mediaComponents.Exists(y => y.uuid == uuid));
+        //    _currentTextMediaPost = post;
+//
+        //    //get post media component, single one
+        //    _postMediaComponent comp = post.mediaComponents.Find(x => x.uuid == uuid);
+//
+        //    string title = post.title;
+        //    _makePostCartMenuTitle.GetComponent<TMP_InputField>().text = title;
+//
+        //    string mediaType = comp.mediaType;
+        //    string txt = comp.textContent;
+//
+        //    //clear the postcard menu
+        //    _removeAllPostsFromEdit();
+//
+        //    //populate the postcard menu
+        //    TextComponent textPost = new TextComponent(comp);
+        //    if (mediaType == "Text")
+        //    {
+        //        //create the text content
+        //        GameObject textPostGameObject = Instantiate(prefabTextPost, new Vector3(0, 0, 0), Quaternion.identity);
+        //        textPostGameObject.name = textPost.uuid;
+        //        textPostGameObject.transform.SetParent(_makePostCartMenuContentHolder.transform);
+        //        textPostGameObject.transform.localScale = new Vector3(1, 1, 1);
+        //        GameObject posttxt = textPostGameObject.transform.Find("InputField (TMP)").gameObject;
+        //        posttxt.GetComponent<TMP_InputField>().text = txt;
+//
+        //        //assign remove component button
+        //        GameObject rembutton = textPostGameObject.transform.Find("InputField (TMP)").gameObject.transform.Find("Button").gameObject;
+        //        rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(textPost.uuid));
+        //    }
+//
+        //    //next, we open the menus
+        //    _showPostcardMenu();
+//
+        //}
+
+
         private void _removeAllPostsFromEdit()
         {
             //clear the postcard menu
@@ -1472,31 +1544,22 @@ namespace SpatialNotes
                 GameObject.Destroy(child.gameObject);
             }
         }
-        private void _debugsmushtextToPostcard()
-        {
-            string txt = "DEBUG:  ";
-            //combine all the text of all the text components
-            for (int i = 0; i < _currentTextMediaPost.mediaComponents.Count; i++)
-            {
-                if (_currentTextMediaPost.mediaComponents[i].mediaType == "Text")
-                {
-                    TextComponent textComp = (TextComponent)_currentTextMediaPost.mediaComponents[i];
-                    txt += textComp.textContent + " ";
-                }
-            }
 
-            //set the description of the location to this
-            _selectedLocationInfo.description = txt;
-            Debug.Log("Description: " + txt);
-
-            //hide side menu
-            _hideSideMenu();
-        }
 
         public void returnHome()
         {
             map.SaveAll();
             UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenuScene");
+        }
+
+        public void ChangeSortModeDropdown(TMPro.TMP_Dropdown tmp_dd)
+        {
+            int val = tmp_dd.value;
+
+            //set dropdown value
+            _currentSortMode = (SortMode)val;
+
+            _drawAndUpdateSideBarForLocation();
         }
     }
 

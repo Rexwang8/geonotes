@@ -227,7 +227,7 @@ namespace SpatialNotes
             foreach (KeyValuePair<string, LocationInfo> location in locationDict)
             {
                 location.Value.coordinate = _convertCoordStr2Vec3(location.Key);
-                Debug.Log("Location: " + location.Key + " " + location.Value.locationName + " " + location.Value.description);
+                //Debug.Log("Location: " + location.Key + " " + location.Value.locationName + " " + location.Value.description);
             }
         }
 

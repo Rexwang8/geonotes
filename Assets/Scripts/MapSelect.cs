@@ -43,10 +43,10 @@ namespace SpatialNotes
 
             // wait for a 200ms
             yield return new WaitForSeconds(0.2f);
-            Debug.Log("Remaing number of children: " + _contentScrollView.transform.childCount);
+            //Debug.Log("Remaing number of children: " + _contentScrollView.transform.childCount);
             if (_contentScrollView.transform.childCount > 0)
             {
-                Debug.Log("Children not destroyed (could be first frame)");
+                //Debug.Log("Children not destroyed (could be first frame)");
                 yield return null;
             }
 
@@ -145,7 +145,7 @@ namespace SpatialNotes
         {
             string mapName = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.GetComponentInChildren<TMP_Text>().text;
             string buttonName = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name;
-            Debug.Log("Button " + buttonName + " was clicked, map name: " + mapName);
+            //Debug.Log("Button " + buttonName + " was clicked, map name: " + mapName);
 
             // Instantiate messenger object
             GameObject messenger = new GameObject();
@@ -184,7 +184,7 @@ namespace SpatialNotes
             RefreshMapSelectPanel();
 
 
-            TriggerPopup(text: "Map " + _mapNameInput.GetComponent<TMP_InputField>().text + " created (NOT ACTUALLY, WIP)", title: "Map Created", imageName: "checkmark");
+            TriggerPopup(text: "Map " + _mapNameInput.GetComponent<TMP_InputField>().text + " created", title: "Map Created", imageName: "checkmark");
         }
 
         // upload image 
@@ -212,7 +212,7 @@ namespace SpatialNotes
         {
             if (_explorerActive)
             {
-                Debug.Log("Explorer already active");
+                //Debug.Log("Explorer already active");
                 return;
             }
             //open in maps directory, if it exists, else create it
@@ -235,7 +235,7 @@ namespace SpatialNotes
         {
             if (_explorerActive)
             {
-                Debug.Log("Explorer already active");
+                //Debug.Log("Explorer already active");
                 TriggerPopup("Explorer already active", "Explorer Active", "xmark");
                 return;
             }
@@ -340,7 +340,7 @@ namespace SpatialNotes
                 {
                     string[] error = FileBrowser.Result;
                     string errorString = string.Join(", ", error);
-                    Debug.Log("Error: " + errorString);
+                    //Debug.Log("Error: " + errorString);
                     TriggerPopup("Error: " + errorString, "Error", "xmark");
                 }
                 catch (System.Exception e)
@@ -357,14 +357,14 @@ namespace SpatialNotes
         {
             if (paths.Length == 0)
             {
-                Debug.Log("No files were selected");
+                //Debug.Log("No files were selected");
                 TriggerPopup("No files were selected", "No Files Selected", "xmark");
                 return;
             }
-            foreach (string path in paths)
-            {
-                Debug.Log("Selected file: " + path);
-            }
+            //foreach (string path in paths)
+            //{
+            //    Debug.Log("Selected file: " + path);
+            //}
 
             // select only one 
             string selectedPath = paths[0];
@@ -381,7 +381,7 @@ namespace SpatialNotes
             }
             else
             {
-                Debug.Log("File does not exist: " + selectedPath);
+                //Debug.Log("File does not exist: " + selectedPath);
                 TriggerPopup("File does not exist: " + selectedPath, "File Not Found", "xmark");
             }
 
@@ -398,7 +398,7 @@ namespace SpatialNotes
         {
             if (paths.Length == 0)
             {
-                Debug.Log("No files were selected");
+                //Debug.Log("No files were selected");
                 TriggerPopup("No files were selected", "No Files Selected", "xmark");
                 return;
             }
