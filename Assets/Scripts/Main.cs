@@ -54,15 +54,15 @@ namespace SpatialNotes
             GameObject mapCanvas = GameObject.Find("MapCanvas");
             if (mapCanvas == null)
             {
-                Debug.Log("MapCanvas not found");
+                //Debug.Log("MapCanvas not found");
                 return;
             }
-            Debug.Log("MapCanvas found");
+            //Debug.Log("MapCanvas found");
             // Set image
             Texture2D tex = map.image;
             float screenWidth = Screen.width;
             float screenHeight = Screen.height;
-            Debug.Log("Screen width: " + tex.width + " Screen height: " + tex.height);
+            //Debug.Log("Screen width: " + tex.width + " Screen height: " + tex.height);
             Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
             GameObject mapImage = mapCanvas.transform.Find("MapImage").GetChild(2).gameObject; //get child of mapImage
                                                                                                //Adjust the height and width of the map image to match the sprite
@@ -104,7 +104,7 @@ namespace SpatialNotes
             //EverythingElse.transform.localScale = new Vector3(scale, scale, 1);
 
             // Set the map canvas to active
-            Debug.Log("Map loaded");
+            //Debug.Log("Map loaded");
         }
 
         void Update()
@@ -112,7 +112,7 @@ namespace SpatialNotes
             //if s is pressed, save the map
             if (Input.GetKeyDown(KeyCode.S))
             {
-                Debug.Log("Saved Map");
+                //Debug.Log("Saved Map");
                 map.SaveAll();
             }
         }
