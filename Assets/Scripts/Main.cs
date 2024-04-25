@@ -91,11 +91,6 @@ namespace SpatialNotes
             GameObject EverythingElse = GameObject.Find("EverythingElseScaled");
             EverythingElse.transform.localScale = new Vector3(scale, scale, 1);
 
-
-
-
-
-
             //Debug.Log("Screen width: " + screenWidth + " Screen height: " + screenHeight);
 
             //Scale the map to fit the screen

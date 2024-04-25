@@ -133,7 +133,7 @@ namespace SpatialNotes
             sideMenuEditLocation = sideMenu.transform.Find("SideMenuEditLocation").gameObject;
             //get content child inside viewport of scroll view of sidemenushowlocation
             sideMenuShowLocationContent = sideMenuShowLocation.transform.Find("Scroll View").transform.Find("Viewport").transform.Find("Content").gameObject;
-            showMorePanel = sideMenuShowLocation.transform.Find("ShowMore").gameObject.transform.Find("Panel").gameObject;
+            showMorePanel = sideMenuShowLocationContent.transform.Find("LocationImage").gameObject.transform.Find("ShowMore").gameObject.transform.Find("Panel").gameObject;
 
             // Get the location button
             sideMenuCreateLocationButtonAdd = sideMenuCreateLocation.transform.Find("Add").gameObject;
@@ -1199,10 +1199,9 @@ namespace SpatialNotes
                     GameObject imgPostGameObject = GameObject.Find(imgComp.uuid);
                     imgComp.mediaPath = imgPostGameObject.transform.GetChild(2).GetComponent<TMP_Text>().text;
                     _tempPost.mediaComponents.Add(imgComp);
-
-                    
                 }
             }
+            
             _currentTextMediaPost.title = title;
             _tempPost.title = title;
             if (_currentTextMediaPost.title == "")
@@ -1248,7 +1247,6 @@ namespace SpatialNotes
         {
             //Clear the postcard menu
             _clearPostcardPosts();
-
             
             //get the location info
             LocationInfo locInfo = _selectedLocationInfo;
@@ -1317,7 +1315,11 @@ namespace SpatialNotes
                             textPostGameObject.name = textComp.uuid;
                             textPostGameObject.transform.SetParent(_postcardScrollViewContent.transform);
                             textPostGameObject.transform.localScale = new Vector3(1, 1, 1);
-                            GameObject posttxt = textPostGameObject.transform.GetChild(1).gameObject;
+                            //GameObject posttxt = textPostGameObject.transform.GetChild(1).gameObject;
+                            GameObject posttxt = textPostGameObject.transform.Find("Scroll View").gameObject.transform.Find("Viewport").gameObject.transform.Find("Content").gameObject;
+                            //posttxt contains a TextMeshPro Text UI element. Change the text to the post content
+                            
+
                             string poststring = textComp.textContent.Trim();
                             if (poststring.Length == 0 || poststring == "")
                             {
@@ -1327,10 +1329,15 @@ namespace SpatialNotes
 
                             GameObject postdata = textPostGameObject.transform.GetChild(2).gameObject;
                             string postdate = post.GetDate();
-                            postdata.GetComponent<TextMeshProUGUI>().text = "Posted on: " + postdate + " under: " + post.title;
+                            //get component by name
+                            GameObject titleText = textPostGameObject.transform.Find("Title").gameObject;
+                            titleText.GetComponent<TextMeshProUGUI>().text = post.title;
+                            GameObject dateText = textPostGameObject.transform.Find("Date").gameObject;
+                            dateText.GetComponent<TextMeshProUGUI>().text = "Posted on: " + postdate;
+
                             //assign remove component button
-                            GameObject rembutton = textPostGameObject.transform.GetChild(0).gameObject;
-                            //rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(textComp.uuid));
+                            GameObject rembutton = textPostGameObject.transform.Find("DelButton").gameObject;
+                            rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(textComp.uuid));
                         }
                         else if (comp.mediaType == "Image")
                         {
@@ -1343,9 +1350,12 @@ namespace SpatialNotes
                             imagePostGameObject.transform.localScale = new Vector3(1, 1, 1);
                             GameObject postimg = imagePostGameObject.transform.GetChild(1).gameObject;
                             //posttxt.GetComponent<TextMeshProUGUI>().text = "Image";
-                            GameObject postdata = imagePostGameObject.transform.GetChild(3).gameObject;
                             string postdate = post.GetDate();
-                            postdata.GetComponent<TextMeshProUGUI>().text = "Posted on: " + postdate + " under: " + post.title;
+                            //get component by name
+                            GameObject titleText = imagePostGameObject.transform.Find("Title").gameObject;
+                            titleText.GetComponent<TextMeshProUGUI>().text = post.title;
+                            GameObject dateText = imagePostGameObject.transform.Find("Date").gameObject;
+                            dateText.GetComponent<TextMeshProUGUI>().text = "Posted on: " + postdate;
 
                             //Try to load the image
                             Texture2D texture = new Texture2D(2, 2);
@@ -1367,9 +1377,15 @@ namespace SpatialNotes
                             //rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(imageComp.uuid));
                         }
                     }
-
                 }
 
+                //Create an empty object with no prefab
+                GameObject emptyPost = new GameObject();
+                emptyPost.transform.SetParent(_postcardScrollViewContent.transform);
+                emptyPost.transform.localScale = new Vector3(1, 1, 1);
+                emptyPost.AddComponent<RectTransform>();
+                emptyPost.GetComponent<RectTransform>().sizeDelta = new Vector2(0, 0);
+                emptyPost.name = "Iamconformingtoyourjankyways:v";
 
             }
 
@@ -1428,14 +1444,12 @@ namespace SpatialNotes
             textPostGameObject.transform.localScale = new Vector3(1, 1, 1);
 
             //assign remove component button
-            GameObject rembutton = textPostGameObject.transform.GetChild(1).gameObject;
+            GameObject rembutton = textPostGameObject.transform.Find("InputField (TMP)").gameObject.transform.Find("Button").gameObject;
             int index = _currentTextMediaPost.mediaComponents.Count - 1;
             rembutton.GetComponent<Button>().onClick.AddListener(() => _removePostComponent(uuid));
 
             //trigger layout rebuild
             LayoutRebuilder.ForceRebuildLayoutImmediate(_makePostCartMenuContentHolder.GetComponent<RectTransform>());
-
-
         }
 
         private void _removePostComponent(string uuid)
@@ -1477,6 +1491,12 @@ namespace SpatialNotes
 
             //hide side menu
             _hideSideMenu();
+        }
+
+        public void returnHome()
+        {
+            map.SaveAll();
+            UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenuScene");
         }
     }
 
